@@ -362,25 +362,47 @@ def fig_auc_f_slopegraph():
 def fig_recoverability_schematic():
     print("Generating Fig 05: Recoverability boundary schematic...")
 
-    def make_boundary(auc, alpha_penalty=0.85):
-        alphas = np.arange(0, 90)
-        target_area = auc * 89 * 89
-        p = 1.8 / alpha_penalty
-        for k in np.linspace(88, 20, 5000):
-            beta_max = k * (1 - (alphas / 90) ** p)
-            area = np.trapezoid(np.clip(beta_max, 0, 89), alphas)
-            if area <= target_area:
-                return alphas, np.clip(beta_max, 0, 89)
-        return alphas, np.zeros_like(alphas)
+    def make_boundary(auc, alpha_anisotropy=1.0):
+        """
+        Construct a superellipse-shaped boundary whose enclosed area matches
+        auc * 89 * 89. Higher AUC -> higher exponent n -> more rectangular
+        boundary (strictly nesting outward).  alpha_anisotropy > 1 makes the
+        alpha axis decay faster than beta (the observed asymmetry).
+        """
+        alphas = np.arange(0, 90, dtype=float)
+        target_area = auc * 89.0 * 89.0
+
+        best_n, best_err = 2.0, float("inf")
+        for n in np.linspace(1.5, 20.0, 2000):
+            # Symmetric superellipse
+            inner = 1.0 - (alphas / 89.0) ** n
+            inner = np.clip(inner, 0, 1)
+            beta_max = 89.0 * inner ** (1.0 / n)
+            area = np.trapezoid(beta_max, alphas)
+            err = abs(area - target_area)
+            if err < best_err:
+                best_err, best_n = err, n
+
+        n = best_n
+        inner = 1.0 - (alphas / 89.0) ** n
+        inner = np.clip(inner, 0, 1)
+        beta_max = 89.0 * inner ** (1.0 / n)
+
+        # Apply alpha anisotropy: multiply beta by a mild decay tied to alpha
+        # so the boundary contracts faster along alpha than beta.
+        if alpha_anisotropy != 1.0:
+            decay = 1.0 - 0.10 * (alphas / 89.0) ** 2 * (alpha_anisotropy - 1.0)
+            beta_max = beta_max * decay
+        return alphas, np.clip(beta_max, 0, 89)
 
     specs = [
-        ("U-Net",         0.919, 0.80, "--",          1.6),
-        ("U-Net Cond.",   0.919, 0.83, "-.",           1.6),
-        ("Restormer",     0.921, 0.86, "-",            2.4),
-        ("GAN-Pix2Pix",  0.907, 0.76, ":",            1.6),
-        ("Diffusion-SR3", 0.887, 0.72, (0,(3,1,1,1)), 1.6),
+        ("U-Net",         0.919, 1.4, "--",           1.6),
+        ("U-Net Cond.",   0.919, 1.2, "-.",           1.6),
+        ("Restormer",     0.921, 1.0, "-",            2.4),
+        ("GAN-Pix2Pix",  0.907, 1.6, ":",            1.6),
+        ("Diffusion-SR3", 0.887, 1.8, (0,(3,1,1,1)), 1.6),
     ]
-    alphas_max, betas_max = make_boundary(0.934, 0.86)
+    alphas_max, betas_max = make_boundary(0.934, 1.0)
 
     fig, ax = plt.subplots(figsize=(6.8, 6.8))
 
