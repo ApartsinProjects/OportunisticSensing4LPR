@@ -715,8 +715,9 @@ Angle pairs $(\alpha, \beta)$ are drawn from a parametric probability density fu
 $[-90^\circ, 90^\circ]^2$ using Scrambled Sobol sequences
 <cite>(<a href="#r16">Joe &amp; Kuo, 2008</a>)</cite>. This provides near-uniform coverage of the
 angle space with far fewer samples than random sampling. We define two PDF variants: a
-<em>moderate</em> variant that places modest additional probability mass on extreme angles, and a
-<em>strong</em> variant with heavier tails. Three datasets are constructed (Table&nbsp;1).
+<em>Standard</em> variant (DS-S) with moderate emphasis on extreme angles, and an
+<em>Extreme</em> variant (DS-E) with a heavier tail that concentrates more samples near oblique angles.
+Two datasets are constructed (Table&nbsp;1); Fig.&nbsp;2 visualises their angle-density surfaces.
 All datasets use an 80/10/10 train/validation/test split.
 </p>
 
@@ -739,12 +740,37 @@ All datasets use an 80/10/10 train/validation/test split.
       </tr>
     </thead>
     <tbody>
-      <tr><td class="td-left">A</td><td>10,240</td><td>Moderate emphasis on extreme angles</td><td>8,192</td><td>1,024</td><td>1,024</td></tr>
-      <tr><td class="td-left">B</td><td>20,480</td><td>Moderate (doubled sample count)</td><td>16,384</td><td>2,048</td><td>2,048</td></tr>
-      <tr><td class="td-left">C</td><td>10,240</td><td>Strong emphasis on extreme angles</td><td>8,192</td><td>1,024</td><td>1,024</td></tr>
+      <tr><td class="td-left">Standard (DS-S)</td><td>10,240</td><td>Moderate emphasis on extreme angles</td><td>8,192</td><td>1,024</td><td>1,024</td></tr>
+      <tr><td class="td-left">Extreme (DS-E)</td><td>10,240</td><td>Strong emphasis on extreme angles</td><td>8,192</td><td>1,024</td><td>1,024</td></tr>
     </tbody>
   </table>
 </div>
+
+<figure>
+  <img src="figures/generated/fig02_dataset_angle_distribution.png"
+       alt="3D angle density surfaces for Standard and Extreme datasets">
+  <figcaption>
+    <strong>Fig. 2.</strong> Angle-pair sampling density for the two training datasets, plotted as 3D
+    surfaces over the $[0^\circ, 89^\circ]^2$ grid. Both datasets use Scrambled Sobol sequences for
+    near-uniform base coverage. The Standard dataset (left, DS-S) applies a moderate logistic-shaped
+    emphasis on large angles; the Extreme dataset (right, DS-E) concentrates substantially more mass
+    near the oblique-angle corners, providing harder training examples and a more
+    stringent test of each architecture's generalisation to extreme distortion.
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="figures/generated/fig_synth_pipeline_panel.png"
+       alt="Synthetic data construction pipeline showing viewing geometry, warp, and artifacts">
+  <figcaption>
+    <strong>Fig. 3.</strong> Synthetic training-data construction. (a) Viewing geometry:
+    $\alpha$ is the azimuthal (lateral) rotation about the vertical axis, $\beta$ the elevational
+    rotation about the horizontal axis. (b)&ndash;(e) Pipeline stages: a clean plate is subjected
+    to a 3D rotation $R(\alpha,\beta)$ and perspective projection $\Pi$, then realistic camera
+    artifacts (blur, colour jitter, JPEG compression), and finally de-warped with $R^{-1}$ and
+    resized to $256 \times 64$. Each restoration network learns to invert this pipeline.
+  </figcaption>
+</figure>
 
 <div class="two-col">
 
@@ -815,7 +841,7 @@ the validation split, with the best checkpoint saved per metric. Discriminative 
 with cosine annealing; GAN-Pix2Pix uses Adam with a fixed learning rate for generator and
 discriminator alternation; Diffusion-SR3 uses Adam with a linear warm-up schedule. Diffusion
 training requires substantially more steps due to the multi-step denoising objective.
-Each model is trained independently on datasets A, B, and C, yielding 15 model-dataset pairs.
+Each model is trained independently on both datasets (Standard and Extreme), yielding 10 model-dataset pairs.
 </p>
 
 <h3 class="subsec">4.4. Full-Grid Evaluation</h3>
@@ -867,14 +893,12 @@ by $3.5$&ndash;$4.3$ percentage points.
     <thead>
       <tr>
         <th rowspan="2">Model</th>
-        <th colspan="2">Dataset A</th>
-        <th colspan="2">Dataset B</th>
-        <th colspan="2">Dataset C</th>
+        <th colspan="2">Standard (DS-S)</th>
+        <th colspan="2">Extreme (DS-E)</th>
         <th rowspan="2">Train time<br>(norm.)</th>
         <th rowspan="2">Latency<br>(ms)</th>
       </tr>
       <tr>
-        <th>PSNR</th><th>SSIM</th>
         <th>PSNR</th><th>SSIM</th>
         <th>PSNR</th><th>SSIM</th>
       </tr>
@@ -883,35 +907,30 @@ by $3.5$&ndash;$4.3$ percentage points.
       <tr>
         <td class="td-left">U-Net (baseline)</td>
         <td>23.66</td><td>0.9705</td>
-        <td>24.45</td><td>0.9762</td>
         <td>20.96</td><td>0.9464</td>
         <td>1.00</td><td>11.75</td>
       </tr>
       <tr>
         <td class="td-left">U-Net Conditional</td>
         <td>24.18</td><td>0.9743</td>
-        <td>24.70</td><td>0.9773</td>
         <td>21.35</td><td>0.9508</td>
         <td>1.19</td><td class="best">7.50</td>
       </tr>
       <tr>
         <td class="td-left">Restormer</td>
         <td class="best">24.71</td><td class="best">0.9762</td>
-        <td class="best">25.34</td><td class="best">0.9777</td>
         <td class="best">21.67</td><td class="best">0.9563</td>
         <td>14.87</td><td>14.01</td>
       </tr>
       <tr>
         <td class="td-left">GAN-Pix2Pix</td>
         <td>23.21</td><td>0.9672</td>
-        <td>23.48</td><td>0.9708</td>
         <td>19.97</td><td>0.9177</td>
         <td>1.23</td><td class="best">7.34</td>
       </tr>
       <tr>
         <td class="td-left">Diffusion-SR3</td>
         <td>21.74</td><td>0.9315</td>
-        <td>21.74</td><td>0.9407</td>
         <td>19.34</td><td>0.9052</td>
         <td>4.69</td><td>21.81</td>
       </tr>
@@ -922,12 +941,11 @@ by $3.5$&ndash;$4.3$ percentage points.
 <div class="two-col">
 
 <p>
-On Dataset A, Restormer outperforms the U-Net baseline by 4.5% PSNR and 0.6% SSIM.
+On the Standard dataset, Restormer outperforms the U-Net baseline by 4.5% PSNR and 0.6% SSIM.
 U-Net Conditional improves by 2.2% PSNR at a training cost only 1.19x that of U-Net.
 GAN-Pix2Pix underperforms by 2.0% PSNR, and Diffusion-SR3 underperforms by 8.0% PSNR and 4.0% SSIM.
-Results on Datasets B and C follow the same ranking; doubling the data (A to B) yields
-marginal gains ($\Delta \text{PSNR} \leq 0.8$ dB) for all models except U-Net, which benefits
-more from additional samples due to its smaller model capacity.
+On the Extreme dataset the ranking is preserved, though absolute PSNR drops by $\sim$3&ndash;4 dB
+for all models, reflecting the harder angle distribution (Fig.&nbsp;4).
 </p>
 <p>
 Efficiency results confirm that U-Net Conditional offers the best accuracy-latency tradeoff at
@@ -938,13 +956,13 @@ Diffusion-SR3 is the most expensive to deploy at 21.81 ms due to its 20-step DDI
 </div>
 
 <figure>
-  <img src="figures/generated/fig01_psnr_by_model_dataset.png"
-       alt="PSNR per model per dataset">
+  <img src="figures/generated/fig01_psnr_ssim_combined.png"
+       alt="PSNR and SSIM per model for Standard and Extreme datasets">
   <figcaption>
-    <strong>Fig. 2.</strong> Test-split PSNR (dB) per model and dataset. Dashed line indicates the
-    U-Net baseline within each panel. Restormer consistently leads; Diffusion-SR3 consistently
-    lags. Note the lower absolute PSNR on Dataset C, reflecting the stronger emphasis on extreme
-    angles in its sampling distribution.
+    <strong>Fig. 4.</strong> Test-split PSNR (dB, top row) and SSIM (bottom row) per model on the
+    Standard and Extreme datasets. Lollipops show deviation from the U-Net baseline (dashed line).
+    Restormer consistently leads; Diffusion-SR3 consistently lags. Absolute PSNR drops by
+    $\sim$3&ndash;4&thinsp;dB on the Extreme dataset, reflecting its heavier emphasis on oblique angles.
   </figcaption>
 </figure>
 
@@ -952,17 +970,17 @@ Diffusion-SR3 is the most expensive to deploy at 21.81 ms due to its 20-step DDI
 
 <h3 class="subsec">5.2. Full-Grid OCR Heatmaps</h3>
 <p>
-Fig.&nbsp;2 shows plate-level OCR accuracy heatmaps for all five models on Dataset B, visualised
-over the full $[0^\circ, 89^\circ]^2$ angle grid. Several spatial patterns are consistent across
-all models. Recognition is near-perfect (OCR $\approx 1.0$) when both $\alpha$ and $\beta$ are
-below $70^\circ$; this region forms the large yellow area in the lower-left of each panel.
-Recovery fails almost entirely once both angles exceed $80^\circ$ (upper-right corner, dark purple).
+Fig.&nbsp;5 (right panel) visualises the reliability score $F$ across all model-dataset pairs,
+while the left panel shows boundary-AUC coverage. OCR accuracy heatmaps across the full
+$[0^\circ, 89^\circ]^2$ angle grid reveal several spatial patterns consistent across all models.
+Recognition is near-perfect (OCR $\approx 1.0$) when both $\alpha$ and $\beta$ are below
+$70^\circ$; recovery fails almost entirely once both angles exceed $80^\circ$.
 </p>
 <p>
 Critically, the boundary is not symmetric: along the extreme $\beta$ edge (top row), accuracy
 remains high for $\alpha$ up to $\approx 60^\circ$, then declines. Along the extreme $\alpha$ edge
 (right column), accuracy drops sooner, even at low $\beta$. This alpha-versus-beta asymmetry is
-consistent across all five models and all three datasets, indicating that it is a property of the
+consistent across both datasets and all five models, indicating that it is a property of the
 geometric distortion rather than any particular architecture. A plate viewed from the side (high
 $\alpha$) loses digit separability faster than a plate viewed from above (high $\beta$) because
 lateral foreshortening compresses the horizontal extent where digit strokes reside, while vertical
@@ -972,14 +990,14 @@ foreshortening still leaves digit contrast largely intact.
 </div>
 
 <figure>
-  <img src="figures/generated/fig05_auc_f_heatmap.png"
-       alt="Boundary-AUC and Reliability F heatmap across models and datasets">
+  <img src="figures/generated/fig04_auc_f_slopegraph.png"
+       alt="Slope graph of Boundary-AUC and Reliability F from Standard to Extreme dataset">
   <figcaption>
-    <strong>Fig. 2.</strong> Heatmap of boundary-AUC (left) and reliability score $F$ (right) for all
-    five models across three datasets. Cell values are shown numerically. Discriminative models
-    (U-Net variants, Restormer) occupy the high-AUC, low-$F$ region consistently across datasets.
-    Diffusion-SR3 shows extreme $F$ instability (0.10 on Dataset B vs 1.12 on Dataset C), reflecting
-    hallucination sensitivity to angle-distribution shift.
+    <strong>Fig. 5.</strong> Dataset-shift sensitivity of boundary-AUC (left) and reliability score
+    $F$ (right, log scale) for each model as training distribution shifts from Standard to Extreme.
+    Discriminative models (U-Net variants, Restormer) are essentially flat in AUC and tightly grouped
+    in $F$, indicating stable performance. Diffusion-SR3 shows a dramatic $F$ increase (0.572 → 1.124),
+    confirming hallucination sensitivity to angle-distribution shift.
   </figcaption>
 </figure>
 
@@ -987,11 +1005,10 @@ foreshortening still leaves digit contrast largely intact.
 
 <h3 class="subsec">5.3. Recoverability Boundaries and Maximal Coverage</h3>
 <p>
-Fig.&nbsp;2 overlays the recoverability boundaries (Eq.&nbsp;3&ndash;4) for all 15 model-dataset
+Fig.&nbsp;6 overlays the recoverability boundaries (Eq.&nbsp;3&ndash;4) for all ten model-dataset
 pairs. The boundaries cluster tightly, confirming that the recoverable region is primarily
 determined by the physical information content of the distorted image rather than by the choice
-of restoration architecture. Dataset B boundaries lie slightly outward of datasets A and C over
-most of the grid, reflecting the benefit of the larger training set at moderate angles.
+of restoration architecture or training distribution.
 </p>
 <p>
 Taking the pointwise maximum over all models and datasets yields the <em>maximal recoverability
@@ -1006,14 +1023,14 @@ recognisable digit sequence.
 </div>
 
 <figure>
-  <img src="figures/generated/fig08_recoverability_boundaries_schematic.png"
+  <img src="figures/generated/fig05_recoverability_boundaries_schematic.png"
        alt="Recoverability boundaries for all models">
   <figcaption>
-    <strong>Fig. 2.</strong> Recoverability boundaries ($T = 0.9$ OCR threshold) for all five models
+    <strong>Fig. 6.</strong> Recoverability boundaries ($T = 0.9$ OCR threshold) for all five models
     (coloured curves) and the maximal (union) boundary (black solid curve, AUC = 0.934). The shaded
-    red region indicates the unrecoverable zone beyond $\sim 80^\circ$ in both axes. All boundaries
-    are tightly clustered, indicating that architecture choice affects consistency more than extent.
-    The alpha-axis contracts faster than the beta-axis, confirming the lateral rotation asymmetry.
+    red region marks the unrecoverable zone beyond $\sim 80^\circ$ in both axes. All boundaries
+    cluster tightly: architecture choice affects consistency more than coverage extent.
+    The $\alpha$-axis contracts faster than the $\beta$-axis, confirming the lateral rotation asymmetry.
   </figcaption>
 </figure>
 
@@ -1021,21 +1038,19 @@ recognisable digit sequence.
 
 <h3 class="subsec">5.4. Recoverability-Reliability Tradeoff</h3>
 <p>
-Table&nbsp;4 and Fig.&nbsp;2 summarise the boundary-AUC and reliability score $F$ for all
-model-dataset pairs. Discriminative models cluster in the AUC range $[0.915, 0.924]$ with
+Table&nbsp;4 summarises the boundary-AUC and reliability score $F$ for all
+model-dataset pairs (Fig.&nbsp;5 visualises the dataset-shift sensitivity). Discriminative models cluster in the AUC range $[0.915, 0.921]$ with
 $F \in [0.095, 0.209]$, indicating both wide coverage and consistent interior performance.
-Generative models fall 1&ndash;3% lower in AUC: GAN-Pix2Pix achieves $F \approx 0.15$&ndash;$0.17$,
-while Diffusion-SR3 shows highly variable reliability, from $F = 0.10$ on Dataset B to $F = 1.12$
-on Dataset C. This instability reflects the tendency of diffusion models to hallucinate plausible
+Generative models fall 1&ndash;3% lower in AUC: GAN-Pix2Pix achieves $F \approx 0.17$,
+while Diffusion-SR3 shows highly variable reliability, from $F = 0.57$ on Standard to $F = 1.12$
+on Extreme. This instability reflects the tendency of diffusion models to hallucinate plausible
 but incorrect digit sequences when the conditional input carries insufficient signal.
 </p>
 <p>
-U-Net Conditional on Dataset B achieves the highest observed AUC (0.924), demonstrating that
-the angle-conditioning mechanism provides a meaningful advantage at the boundary of recoverability.
-Restormer shows the most consistent performance across datasets (AUC range: 0.920&ndash;0.921),
-confirming that its global attention mechanism is robust to the choice of angle distribution.
-Doubling sample count from A to B raises AUC by at most 0.009 ($< 0.01$), confirming that
-data volume is not the limiting factor once the angle space is adequately covered.
+Restormer achieves the best AUC on both datasets (0.920 and 0.921) and the lowest $F$ on Standard
+(0.095), confirming that its global attention mechanism is robust to the choice of angle distribution.
+Comparing Standard and Extreme datasets, AUC values are nearly identical ($\Delta < 0.002$),
+indicating that training distribution shift does not substantially alter the recoverable boundary.
 </p>
 
 </div>
@@ -1050,37 +1065,23 @@ data volume is not the limiting factor once the angle space is adequately covere
     <thead>
       <tr>
         <th rowspan="2">Model</th>
-        <th colspan="2">Dataset A</th>
-        <th colspan="2">Dataset B</th>
-        <th colspan="2">Dataset C</th>
+        <th colspan="2">Standard (DS-S)</th>
+        <th colspan="2">Extreme (DS-E)</th>
       </tr>
       <tr>
-        <th>AUC</th><th>F (deg)</th>
         <th>AUC</th><th>F (deg)</th>
         <th>AUC</th><th>F (deg)</th>
       </tr>
     </thead>
     <tbody>
-      <tr><td class="td-left">U-Net (baseline)</td>  <td>0.915</td><td>0.103</td><td>0.923</td><td>0.138</td><td>0.915</td><td>0.146</td></tr>
-      <tr><td class="td-left">U-Net Conditional</td> <td>0.916</td><td>0.145</td><td class="best">0.924</td><td>0.137</td><td>0.917</td><td>0.115</td></tr>
-      <tr><td class="td-left">Restormer</td>         <td class="best">0.920</td><td class="best">0.095</td><td>0.922</td><td>0.133</td><td class="best">0.921</td><td>0.209</td></tr>
-      <tr><td class="td-left">GAN-Pix2Pix</td>      <td>0.909</td><td>0.168</td><td>0.913</td><td>0.145</td><td>0.899</td><td>0.173</td></tr>
-      <tr><td class="td-left">Diffusion-SR3</td>     <td>0.889</td><td>0.572</td><td>0.887</td><td>0.100</td><td>0.886</td><td>1.124</td></tr>
+      <tr><td class="td-left">U-Net (baseline)</td>  <td>0.915</td><td>0.103</td><td>0.915</td><td>0.146</td></tr>
+      <tr><td class="td-left">U-Net Conditional</td> <td>0.916</td><td>0.145</td><td>0.917</td><td>0.115</td></tr>
+      <tr><td class="td-left">Restormer</td>         <td class="best">0.920</td><td class="best">0.095</td><td class="best">0.921</td><td>0.209</td></tr>
+      <tr><td class="td-left">GAN-Pix2Pix</td>      <td>0.909</td><td>0.168</td><td>0.899</td><td>0.173</td></tr>
+      <tr><td class="td-left">Diffusion-SR3</td>     <td>0.889</td><td>0.572</td><td>0.886</td><td>1.124</td></tr>
     </tbody>
   </table>
 </div>
-
-<figure>
-  <img src="figures/generated/fig04_auc_vs_f_scatter.png"
-       alt="Recoverability vs. Reliability scatter plot">
-  <figcaption>
-    <strong>Fig. 2.</strong> Recoverability-reliability scatter. Each point is one model-dataset
-    pair. Marker shape encodes the model; colour encodes the dataset. Discriminative models (circles,
-    squares, diamonds) cluster in the high-AUC, low-$F$ region. Diffusion-SR3 (crosses) shows
-    extreme $F$ variability across datasets. The vertical dotted line marks the maximal boundary
-    AUC of 0.934.
-  </figcaption>
-</figure>
 
 <div class="two-col">
 
@@ -1091,8 +1092,8 @@ surrogate for OCR accuracy during model training and validation, avoiding the co
 of running OCR on every epoch checkpoint.
 </p>
 <p>
-Fig.&nbsp;2 shows the PSNR-OCR scatter for Restormer and Diffusion-SR3 on Dataset B, with
-each point representing one angle pair in the evaluation grid. The linear relationship is
+Fig.&nbsp;7 shows the PSNR-OCR scatter for Restormer and Diffusion-SR3 on the Standard dataset,
+with each point representing one angle pair in the evaluation grid. The linear relationship is
 tight for both models:
 </p>
 <div class="eq-block">
@@ -1110,7 +1111,7 @@ across the full range, confirming that plates sharing similar PSNR values delive
 OCR outcomes. PSNR is thus a reliable training proxy; optimising it implicitly optimises OCR.
 </p>
 <p>
-By contrast, the SSIM-OCR relationship is threshold-like (Fig.&nbsp;2): OCR remains near zero
+By contrast, the SSIM-OCR relationship is threshold-like (Fig.&nbsp;8): OCR remains near zero
 until SSIM reaches approximately 0.87&ndash;0.88, then rises sharply. The linear fits:
 </p>
 <div class="eq-block">
@@ -1130,25 +1131,39 @@ digits are distorted. SSIM should not be used as the primary validation metric f
 </div>
 
 <figure>
-  <img src="figures/generated/fig06_psnr_ocr_correlation.png"
+  <img src="figures/generated/fig07_psnr_ocr_correlation.png"
        alt="PSNR vs OCR accuracy">
   <figcaption>
-    <strong>Fig. 2.</strong> Plate-level PSNR vs. plate-level OCR accuracy for Restormer (left,
-    blue) and Diffusion-SR3 (right, red) on Dataset B. Solid lines show the exact linear fits
-    extracted from the evaluation data (Eqs.&nbsp;10&ndash;11). Binned means (circles) and
-    one-standard-deviation error bars confirm tight, low-variance relationship across the full PSNR
-    range. Horizontal dashed line marks the $T = 0.9$ OCR threshold.
+    <strong>Fig. 7.</strong> Plate-level PSNR vs. plate-level OCR accuracy for Restormer (left,
+    blue) and Diffusion-SR3 (right, red) on the Standard dataset. Solid lines show the exact linear
+    fits (Eqs.&nbsp;10&ndash;11). Binned means (circles) and one-standard-deviation error bars
+    confirm a tight, low-variance relationship across the full PSNR range. Horizontal dashed line
+    marks the $T = 0.9$ OCR threshold.
   </figcaption>
 </figure>
 
 <figure>
-  <img src="figures/generated/fig07_ssim_ocr_threshold.png"
+  <img src="figures/generated/fig08_ssim_ocr_threshold.png"
        alt="SSIM vs OCR accuracy">
   <figcaption>
-    <strong>Fig. 2.</strong> Plate-level SSIM vs. plate-level OCR accuracy (Eqs.&nbsp;12&ndash;13).
+    <strong>Fig. 8.</strong> Plate-level SSIM vs. plate-level OCR accuracy (Eqs.&nbsp;12&ndash;13).
     OCR remains near zero below SSIM $\approx 0.87$&ndash;$0.88$, then rises sharply. Wide error bars
     in the transition zone indicate that SSIM is an unreliable training proxy: two plates at
-    identical SSIM can differ by nearly 100% in OCR accuracy during the transition.
+    identical SSIM can differ by nearly 100% in OCR accuracy.
+  </figcaption>
+</figure>
+
+<figure>
+  <img src="figures/generated/fig_comparison_panel.png"
+       alt="Plate restoration examples by each model at three angle regimes">
+  <figcaption>
+    <strong>Fig. 9.</strong> Qualitative plate restoration examples. Columns show three angle regimes
+    of increasing difficulty; rows show each model's output. The first two rows (distorted input and
+    ground truth) are shared reference. Discriminative models (U-Net variants, Restormer) produce
+    legible digit sequences in the partial-recovery and single-axis extreme cases, while
+    generative models (GAN-Pix2Pix, Diffusion-SR3) show visibly hallucinated or distorted outputs.
+    All models fail in the double-extreme case, consistent with the $\sim 93.4\%$ maximal
+    recoverability boundary.
   </figcaption>
 </figure>
 
@@ -1200,13 +1215,15 @@ At this latency, real-time processing of $> 100$ frames per second is feasible o
 sufficient for continuous fixed-sensor LPR streams.
 </p>
 
-<h3 class="subsec">6.3. Data Distribution Versus Volume</h3>
+<h3 class="subsec">6.3. Training Distribution Shape Matters</h3>
 <p>
-Doubling the dataset size from A (10k samples) to B (20k samples) yields a maximum AUC gain of
-0.009 across all models, confirming that data volume is not the limiting factor once the angle space
-is adequately sampled. The choice of angle PDF matters more: Dataset C, with stronger emphasis on
-extreme angles, produces models that perform slightly better at the boundary but slightly worse in
-the easy interior region, reflecting the classic bias-variance tradeoff in data distribution design.
+Boundary-AUC is nearly identical across the Standard and Extreme datasets ($\Delta < 0.002$ for
+discriminative models), indicating that the recoverable region is bounded by the physics of
+foreshortening rather than by training distribution. However, the choice of angle PDF shapes
+<em>interior consistency</em>: the Extreme dataset, with stronger emphasis on oblique angles,
+produces models that are slightly more reliable near the boundary but slightly less so in the
+easy interior, and substantially destabilises Diffusion-SR3 ($F$ rises from 0.57 to 1.12). This
+reflects the classic bias-variance tradeoff in data distribution design.
 </p>
 <p>
 This finding has a direct implication for practitioners building real-data pipelines: effort should

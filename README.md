@@ -1,4 +1,10 @@
-# Generative Image Models for Enhancing License Plate Images Captured at Extreme Viewing Angles
+# Opportunistic License Plate Recognition from Urban Imaging Sensors
+
+![Opportunistic Sensing](hero_image.png)
+
+> Quantifying AI-Enabled Recoverability Under Uncontrolled Viewing Angles
+
+**[Read the full paper](https://apartsinprojects.github.io/OportunisticSensing4LPR/paper/index.html)** · [Paper source](paper/index.html)
 
 ---
 
