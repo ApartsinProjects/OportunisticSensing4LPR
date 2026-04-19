@@ -968,23 +968,26 @@ Diffusion-SR3 is the most expensive to deploy at 21.81 ms due to its 20-step DDI
 
 <div class="two-col">
 
-<h3 class="subsec">5.2. Full-Grid OCR Heatmaps</h3>
+<h3 class="subsec">5.2. Spatial Recognition Patterns</h3>
 <p>
-Fig.&nbsp;5 (right panel) visualises the reliability score $F$ across all model-dataset pairs,
-while the left panel shows boundary-AUC coverage. OCR accuracy heatmaps across the full
-$[0^\circ, 89^\circ]^2$ angle grid reveal several spatial patterns consistent across all models.
-Recognition is near-perfect (OCR $\approx 1.0$) when both $\alpha$ and $\beta$ are below
-$70^\circ$; recovery fails almost entirely once both angles exceed $80^\circ$.
+Evaluating plate-level OCR accuracy over the full $[0^\circ, 89^\circ]^2$ angle grid reveals
+several spatial patterns that are consistent across all five models and both datasets. Recognition
+is near-perfect (OCR $\approx 1.0$) when both $\alpha$ and $\beta$ are below $70^\circ$; this
+region covers the majority of the grid and is the basis for the high boundary-AUC values reported
+in Table&nbsp;4. Recovery fails almost entirely once both angles exceed $80^\circ$, producing the
+approximately $6.6\%$ unrecoverable corner summarised in Section&nbsp;5.3.
 </p>
 <p>
-Critically, the boundary is not symmetric: along the extreme $\beta$ edge (top row), accuracy
-remains high for $\alpha$ up to $\approx 60^\circ$, then declines. Along the extreme $\alpha$ edge
-(right column), accuracy drops sooner, even at low $\beta$. This alpha-versus-beta asymmetry is
-consistent across both datasets and all five models, indicating that it is a property of the
-geometric distortion rather than any particular architecture. A plate viewed from the side (high
-$\alpha$) loses digit separability faster than a plate viewed from above (high $\beta$) because
-lateral foreshortening compresses the horizontal extent where digit strokes reside, while vertical
-foreshortening still leaves digit contrast largely intact.
+Critically, the boundary is not symmetric. Along the extreme-$\beta$ edge, accuracy remains high
+for $\alpha$ up to $\approx 60^\circ$ before declining. Along the extreme-$\alpha$ edge, accuracy
+drops sooner, even at low $\beta$. This $\alpha$-versus-$\beta$ asymmetry is consistent across
+both datasets and all five models, indicating that it is a property of the geometric distortion
+rather than any particular architecture. A plate viewed from the side (high $\alpha$) loses digit
+separability faster than a plate viewed from above (high $\beta$) because lateral foreshortening
+compresses the horizontal extent where digit strokes reside, while vertical foreshortening still
+leaves digit contrast largely intact. Fig.&nbsp;8 (qualitative comparison) illustrates this
+asymmetry: at $(\alpha=30^\circ,\beta=88^\circ)$ most models still recover the plate, whereas
+$(\alpha=85^\circ,\beta=65^\circ)$ already causes the first digit to fail for every model.
 </p>
 
 </div>
