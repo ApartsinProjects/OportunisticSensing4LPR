@@ -1218,10 +1218,11 @@ easy interior, and substantially destabilises Diffusion-SR3 ($F$ rises from 0.57
 reflects the classic bias-variance tradeoff in data distribution design.
 </p>
 <p>
-This finding has a direct implication for practitioners building real-data pipelines: effort should
-be invested in angle <em>diversity</em> rather than sample <em>count</em>. A dataset with 10,000
-well-distributed angle pairs will generalise at least as well as one with 20,000 concentrated
-near moderate angles.
+This finding has a direct implication for practitioners building real-data pipelines: once the
+angle space is covered, shaping the training distribution (how many samples fall in the extreme
+corner) influences interior consistency much more than raw sample count. Practitioners should
+therefore invest effort in angular <em>diversity and corner coverage</em> rather than in simply
+collecting more samples in the easy regime.
 </p>
 
 <h3 class="subsec">6.4. Limitations and Scope</h3>
