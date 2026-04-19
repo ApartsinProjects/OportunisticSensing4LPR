@@ -439,9 +439,10 @@ Opportunistic sensing has been explored extensively in mobile computing (using s
 accelerometers for activity recognition, ambient audio for place identification) and in IoT
 contexts (repurposing utility meters and parking sensors for secondary analytics). Its application
 to fixed camera infrastructure for vehicle identity extraction, however, remains largely
-uncharacterized in the urban systems literature. No prior work has asked the fundamental question
-from an urban planning perspective: <em>given a sensor that cannot be repositioned, at what angles
-does enough signal survive to recover a license plate automatically?</em>
+largely uncharacterized in the urban systems literature. To our knowledge, no prior work has
+posed the question from an urban planning perspective: <em>given a sensor that cannot be
+repositioned, at what angles does enough signal survive to recover a license plate
+automatically?</em>
 </p>
 
 <p>
@@ -479,8 +480,8 @@ geometry itself, largely independent of the specific restoration architecture us
 across smart city infrastructure, this paper makes three contributions:</p>
 <ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.55;">
   <li>A systematic comparison of five deep learning restoration architectures for recovering oblique license plates from opportunistic urban sensors, including training efficiency and inference latency analysis relevant to real-time deployment.</li>
-  <li>Two novel metrics — boundary-AUC (angular recoverability coverage) and reliability $F$ (interior consistency) — providing the first systematic angular characterization for opportunistic LPR from non-purpose-built sensors.</li>
-  <li>Quantified deployment limits directly actionable for urban sensor integration: 93.4% of viewing angles are recoverable by software alone; beyond $\sim 80^\circ$ in both axes no current architecture succeeds; lateral rotations are harder than elevational ones; and PSNR is a reliable training surrogate ($R^2 = 0.99$).</li>
+  <li>Two complementary metrics — boundary-AUC (angular recoverability coverage) and reliability $F$ (interior consistency) — adapted from classical envelope and erosion measures to give a compact angular characterisation of opportunistic LPR performance.</li>
+  <li>An empirical recoverability map under this pipeline: within the synthetic benchmark, $\approx 93.4\%$ of viewing angles are recoverable by the best model, breakdown occurs beyond $\sim 80^\circ$ in both axes simultaneously, lateral rotations are consistently harder than elevational ones, and PSNR tracks OCR closely enough ($R^2 = 0.99$) to serve as a training-time surrogate. Absolute thresholds may shift in real deployments; the <em>structure</em> of the map is the transferable contribution.</li>
 </ul>
 
 <!-- CONCEPT FIGURE -->
@@ -544,8 +545,9 @@ information from opportunistic captures carries well-understood ethical constrai
 deployment of the methods studied here must respect. Recent deep learning advances make such
 repurposing technically viable: where classical computer vision required controlled illumination,
 known geometry, and near-frontal capture, modern restoration pipelines can recover structured
-information from imagery that would previously have been discarded. Our work provides the first
-quantitative boundary for when this AI-enabled repurposing succeeds for LPR.
+information from imagery that would previously have been discarded. The present work contributes
+a first quantitative angular boundary for when this AI-enabled repurposing succeeds for LPR under
+a controlled synthetic pipeline.
 </p>
 
 <h3 class="subsec">2.2. License Plate Recognition and Its Assumptions</h3>
@@ -629,7 +631,7 @@ for license plate recognition under oblique-angle distortion. Prior recoverabili
 domains (e.g., audio under noise, face recognition under blur) use threshold curves and AUC-type
 measures over the degradation parameter space, but no such framework has been applied to the
 two-dimensional $(\alpha, \beta)$ space of camera viewing angles. Our empirical results provide
-the first such characterisation for LPR, with concrete guidance on SSIM's threshold-like behaviour.
+such a characterisation for oblique LPR, together with concrete guidance on SSIM's threshold-like behaviour.
 </p>
 
 <!-- ===== 3. PROBLEM FORMULATION ===== -->
@@ -1078,8 +1080,8 @@ $(\alpha=85^\circ,\beta=65^\circ)$ already causes the first digit to fail for ev
 <h3 class="subsec">5.3. Recoverability Boundaries and Maximal Coverage</h3>
 <p>
 Taking the pointwise maximum over all models and datasets yields the <em>maximal recoverability
-boundary</em>, which encloses a boundary-AUC of 0.934. This means that even under the best-case
-scenario combining all models and training conditions, only 93.4% of the $[0^\circ, 89^\circ]^2$
+boundary</em>, which encloses a boundary-AUC of 0.934. Within this synthetic benchmark this
+means that, even pooling across all trained models and both training conditions, at most 93.4% of the $[0^\circ, 89^\circ]^2$
 angle grid can be recovered at $\geq 90\%$ plate OCR accuracy. The remaining 6.6% (the upper-right
 corner, where both $\alpha$ and $\beta$ exceed $\sim 80^\circ$) is physically unrecoverable:
 the signal energy in the severely foreshortened plate image is too low for any current restoration
@@ -1386,8 +1388,8 @@ from fixed urban sensors capturing vehicles at extreme oblique angles. Through a
 synthetic benchmark spanning the full $[0^\circ, 89^\circ]^2$ angle space with Sobol-sampled
 training data and five representative deep-learning restoration architectures, we have established
 that approximately 93.4% of this angle space is recoverable at $\geq 90\%$ plate OCR accuracy.
-Beyond $\sim 80^\circ$ in both azimuthal and elevational rotation simultaneously, no current
-architecture can extract a reliable plate number; the residual signal energy is simply insufficient.
+Beyond $\sim 80^\circ$ in both azimuthal and elevational rotation simultaneously, none of the
+architectures evaluated here can extract a reliable plate number; the residual signal energy is simply insufficient.
 </p>
 <p>
 Discriminative architectures (U-Net, U-Net Conditional, Restormer) consistently outperform
