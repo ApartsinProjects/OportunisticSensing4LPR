@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Opportunistic LPR from Smart City Fixed Sensors</title>
+<title>Mapping License Plate Recoverability: A Synthetic Benchmark for Opportunistic Urban Sensing</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
@@ -353,8 +353,8 @@ hr.sec-rule {
      ============================================================ -->
 <div class="title-block">
   <h1 class="article-title">
-    Opportunistic License Plate Recognition from Urban Imaging Sensors:
-    Quantifying AI-Enabled Recoverability Under Uncontrolled Viewing Angles
+    Mapping License Plate Recoverability Under Extreme Viewing Angles:
+    A Synthetic Benchmark for Opportunistic Urban Sensing
   </h1>
   <div class="authors">Igor Adamenko<sup>1</sup>, Orpaz Ben Aharon<sup>2</sup>, Yehudit Aperstein<sup>3</sup>, Alexander Apartsin<sup>4</sup></div>
   <div class="affiliations">
@@ -367,41 +367,41 @@ hr.sec-rule {
   <div class="abstract-block">
     <h2>Abstract</h2>
     <p>
-      Modern urban environments are saturated with imaging sensors deployed for purposes entirely
-      unrelated to vehicle identification. ATM machines continuously record transaction environments;
-      law enforcement and security personnel carry body-worn cameras; vehicles are equipped with
-      dashboard cameras logging every journey; pole-mounted surveillance sensors monitor public spaces;
-      and smartphone cameras ubiquitously document everyday scenes. None of these devices is calibrated
-      or positioned for license plate recognition (LPR), yet each may inadvertently capture a vehicle
-      of investigative or operational interest. Recent advances in deep learning image restoration have
-      fundamentally changed what is extractable from such imagery: models can now recover structured
-      information from severely distorted, compressed, or obliquely-captured frames that would have
-      been discarded as unreadable a decade ago. This creates a new paradigm we term
-      <em>opportunistic sensing</em>: the AI-enabled extraction of identity information from imaging
-      sensors not designed, positioned, or oriented for that task. Despite the proliferation of such
-      sensors across urban infrastructure, no prior work has quantified the fundamental recoverability
-      limit, that is, across what range of uncontrolled viewing angles can a license plate still be
-      automatically read from a non-purpose-built sensor.
+      <strong>Problem.</strong> Modern urban environments are saturated with imaging sensors
+      deployed for purposes unrelated to vehicle identification: ATM cameras, body-worn police
+      devices, dashboard cameras, pole-mounted CCTV, and smartphones. None is calibrated or
+      positioned for license plate recognition (LPR), yet each may incidentally capture a vehicle
+      of interest. Recent deep-learning image restoration makes it plausible to read plates from
+      such non-purpose-built captures, creating a paradigm we term <em>opportunistic sensing</em>.
+      The open question is not whether restoration works, but <em>where in the space of
+      uncontrolled viewing angles it reliably works, and where it fails</em>.
     </p>
     <p>
-      We address this gap through a controlled synthetic benchmark spanning the full oblique-angle
-      space $[0^\circ, 89^\circ]^2$. Clean license plate images are geometrically distorted across
-      all rotation pairs $(\alpha, \beta)$ with realistic camera artifacts applied, and paired with
-      their originals. Five deep-learning restoration architectures are trained and compared: three
-      discriminative (U-Net, angle-conditioned U-Net, Restormer) and two generative (Pix2Pix GAN,
-      diffusion SR3). All models are evaluated on a shared full-angle grid using plate-level OCR
-      accuracy as the primary metric.
+      <strong>Method.</strong> We construct a controlled synthetic benchmark that sweeps the full
+      oblique-angle grid $[0^\circ, 89^\circ]^2$ using Scrambled Sobol sampling, applies
+      geometrically correct homographic distortion plus realistic camera artifacts, and trains
+      five representative restoration architectures (U-Net, angle-conditioned U-Net, Restormer,
+      Pix2Pix GAN, SR3 diffusion). <strong>Measurement.</strong> Each model is evaluated on the
+      shared full-angle grid using plate-level OCR accuracy. We adapt two complementary metrics
+      from the recoverability literature: <em>boundary-AUC</em> (how much of the viewing-angle
+      space is usable) and a <em>reliability score $F$</em> (how many interior "holes" of
+      unexpected failure appear within otherwise-recoverable regions).
     </p>
     <p>
-      We introduce two complementary metrics: boundary-AUC, measuring the fraction of the angle grid
-      where recovery succeeds at $\geq 90\%$ OCR accuracy, and a reliability score $F$, measuring
-      the depth and frequency of interior failures. Our results show that approximately 93.4% of the
-      full angle grid is recoverable by the best available model. Recovery fails beyond approximately
-      $80^\circ$ in both axes simultaneously, with alpha rotations consistently harder to reconstruct
-      than beta rotations. Discriminative architectures outperform generative models in accuracy,
-      training efficiency, and reliability. PSNR serves as a highly reliable OCR proxy during
-      training ($R^2 = 0.99$), while SSIM exhibits a threshold-like response ($R^2 \approx 0.74$)
-      that makes it unsuitable for validation.
+      <strong>Results.</strong> Within this synthetic pipeline (fixed focal length, fixed
+      plate-to-camera distance, Israeli-format plates at $256 \times 64$, Tesseract v4 OCR),
+      approximately 93.4% of the full angle grid is recoverable by the best available model;
+      recovery breaks down beyond roughly $80^\circ$ in both axes simultaneously, and lateral
+      ($\alpha$) rotations are consistently harder to reconstruct than elevational ($\beta$)
+      rotations. Discriminative architectures outperform generative models on coverage, training
+      efficiency, and interior consistency; PSNR is a reliable OCR proxy during training
+      ($R^2 = 0.99$), while SSIM exhibits a threshold-like response ($R^2 \approx 0.74$) that
+      makes it unsuitable for checkpoint selection.
+      <strong>Insight.</strong> The shape of the recoverable region is dominated by sensing
+      geometry rather than architecture choice: all five models cluster within a narrow AUC band
+      ($0.89$–$0.92$) and share the same $\alpha/\beta$ asymmetry. Absolute recoverability
+      thresholds may shift in real deployments, but the <em>structure</em> of the recoverability
+      space is expected to remain consistent.
     </p>
   </div>
 
@@ -462,11 +462,17 @@ This paper provides that map. We construct a synthetic benchmark that samples th
 $[0^\circ, 89^\circ]^2$ angle space using low-discrepancy Sobol sequences, distorts clean
 plate images with geometric warping and realistic camera artifact simulation, and trains five
 representative deep-learning architectures on the resulting pairs. We then evaluate all models on
-a shared full-angle grid and introduce two novel metrics: the <em>boundary-AUC</em>, which quantifies
-the fraction of the angle space where at least 90% of plates are recognized, and the
-<em>reliability score $F$</em>, which measures how consistently this boundary holds against interior
-failures. Together these metrics reduce a $90 \times 90$ performance matrix to two interpretable
-numbers directly actionable by urban planners and system integrators.
+a shared full-angle grid and introduce two complementary metrics adapted from the recoverability
+literature: the <em>boundary-AUC</em>, which quantifies the fraction of the angle space where at
+least 90% of plates are recognized, and the <em>reliability score $F$</em>, which measures how
+consistently this boundary holds against interior failures. Together these metrics reduce a
+$90 \times 90$ performance matrix to two interpretable numbers.
+</p>
+<p>
+In one sentence: <strong>this paper introduces <em>recoverability maps</em> for LPR under
+uncontrolled viewing geometry — a quantitative boundary of what urban imaging sensors can reliably
+recover — and establishes the shape of that map as a measurable property of the sensing
+geometry itself, largely independent of the specific restoration architecture used.</strong>
 </p>
 
 <p><strong>Contributions.</strong> Motivated by the proliferation of non-purpose-built imaging sensors
@@ -485,10 +491,11 @@ across smart city infrastructure, this paper makes three contributions:</p>
        alt="Urban environment with diverse opportunistic imaging sensors capturing a vehicle">
   <figcaption>
     <strong>Fig. 1.</strong> Opportunistic sensing in a smart city environment. Multiple imaging
-    sensors deployed for unrelated purposes — ATM machine cameras, body-worn law enforcement
-    cameras, vehicle dashcams, and pole-mounted CCTV — may inadvertently capture the same vehicle
-    at uncontrolled viewing angles. AI-enabled restoration recovers readable license plates from
-    severely oblique imagery that conventional LPR systems cannot process.
+    sensors deployed for unrelated purposes — ATM machine cameras, body-worn cameras, vehicle
+    dashcams, pole-mounted CCTV, and handheld smartphones — incidentally capture a passing
+    vehicle at diverse, uncontrolled viewing angles. This paper asks at which of these angles
+    deep-learning image restoration can still recover a readable license plate from such
+    non-purpose-built captures.
   </figcaption>
 </figure>
 
@@ -526,11 +533,19 @@ applies to these imaging platforms for vehicle identity extraction.
 <p>
 Urban computing <cite>(<a href="#r24">Zheng et al., 2014</a>)</cite> and smart city frameworks
 <cite>(<a href="#r25">Townsend, 2013</a>)</cite> emphasise algorithmic repurposing of existing
-infrastructure to avoid capital expenditure. Recent deep learning advances make this increasingly
-viable for imaging sensors: where classical computer vision required controlled illumination,
-known geometry, and near-frontal capture, modern restoration and recognition pipelines can
-recover structured information from imagery that would previously have been discarded. Our work
-provides the first quantitative boundary for when this AI-enabled repurposing succeeds for LPR.
+infrastructure to avoid capital expenditure. Two adjacent literatures inform the present study.
+First, urban camera geometry: the classical calibration framework of Zhang
+<cite>(<a href="#r34">2000</a>)</cite> provides the mathematical foundation for estimating the
+oblique pose of arbitrary fixed cameras from minimal scene content, a prerequisite for relating
+any empirical recoverability map to a specific urban sensor in the field. Second, privacy in
+secondary-use imagery: Frome et al. <cite>(<a href="#r35">2009</a>)</cite> documented large-scale
+face and license-plate blurring in Google Street View, establishing that extracting identity
+information from opportunistic captures carries well-understood ethical constraints which any
+deployment of the methods studied here must respect. Recent deep learning advances make such
+repurposing technically viable: where classical computer vision required controlled illumination,
+known geometry, and near-frontal capture, modern restoration pipelines can recover structured
+information from imagery that would previously have been discarded. Our work provides the first
+quantitative boundary for when this AI-enabled repurposing succeeds for LPR.
 </p>
 
 <h3 class="subsec">2.2. License Plate Recognition and Its Assumptions</h3>
@@ -549,9 +564,19 @@ end-to-end automatic LPR and demonstrated that recognition accuracy degrades sub
 oblique capture angles even for state-of-the-art YOLO-based detectors, confirming the practical
 gap addressed here. Their detection-first pipeline implicitly assumes digit contrast and horizontal
 separation remain sufficient for segmentation, an assumption that fails once azimuthal rotation
-exceeds approximately $45^\circ$. Our work differs fundamentally: we address the regime where the
-plate is <em>not</em> readable without deep image restoration, and we characterize how far into
-that regime restoration can reach.
+exceeds approximately $45^\circ$. Laroca et al. <cite>(<a href="#r29">2022</a>)</cite> later
+expanded this line with RodoSol-ALPR, explicitly evaluating cross-dataset generalisation and
+showing that LPR performance can drop sharply when the evaluation distribution differs from
+training. Silva and Jung <cite>(<a href="#r30">2018</a>)</cite> proposed WPOD-NET to rectify
+oblique plates via per-instance planar warping before recognition, a detect-then-deskew approach
+that works well up to moderate angles but still requires the plate to be roughly readable. Xu et
+al. <cite>(<a href="#r31">2021</a>)</cite> built an explicit perspective-rectification module
+into the LPR pipeline. A parallel line of work treats oblique LPR as a super-resolution problem:
+Zou et al. <cite>(<a href="#r32">2019</a>)</cite> target extremely low-resolution plates, and
+Hamdi et al. <cite>(<a href="#r33">2021</a>)</cite> combine image enhancement with super-resolution
+to improve downstream OCR. Our work differs fundamentally from all of these: rather than
+proposing another restoration architecture, we map <em>where in the angle space</em> restoration
+remains viable at all, treating recoverability as a measurable property of the sensing geometry.
 </p>
 
 <h3 class="subsec">2.3. Deep Learning Image Restoration</h3>
@@ -627,6 +652,11 @@ coordinates, followed by a perspective projection $\Pi$ onto the image plane:
 <p>
 where $x_0$ is the clean plate image, $D$ is a degradation operator modelling edge blending,
 colour jitter, Gaussian blur, and JPEG compression, and $x_d$ is the observed distorted image.
+Following the construction described in Section&nbsp;4.1, $x_d$ is subsequently de-warped by the
+inverse homography $R(\alpha,\beta)^{-1}$ and resized to $256\times 64$ before being passed to
+the restoration network; this re-aligned input is what each $f_\theta$ learns to correct. Thus
+the angular boundary reported in this paper is the boundary <em>after</em> inverse-homography
+compensation and reflects what information remains after resampling, not the raw oblique capture.
 The goal is to learn a restoration function $\hat{x}_0 = f_\theta(x_d)$ such that an OCR engine
 applied to $\hat{x}_0$ correctly reads the plate number.
 </p>
@@ -645,7 +675,8 @@ $(\alpha, \beta)$. We define the binary <em>recoverability indicator</em> at thr
 <p>
 We set $T = 0.9$, requiring at least 9 out of 10 plates at each angle pair to be fully recognized.
 The <em>recoverability boundary</em> $B_T$ is the outer envelope of the region where $r_T = 1$.
-Formally, define:
+Formally, define (using the convention $\max\varnothing=-1$ so a fully unrecoverable slice is
+distinguishable from a boundary at $\beta=0$):
 </p>
 
 <div class="eq-block">
@@ -691,7 +722,13 @@ enclosed area $E$:
 
 <p>
 $F = 0$ means no interior failures; larger $F$ indicates more frequent or deeper failures.
-Together, AUC captures <em>extent</em> and $F$ captures <em>consistency</em> of recoverability.
+<strong>Intuition:</strong> boundary-AUC measures <em>how much</em> of the viewing-angle space
+is usable; $F$ penalises <em>holes</em> — angle pairs inside the nominally recoverable region
+where restoration unexpectedly collapses. A model with high AUC but also high $F$ covers a wide
+area but cannot be trusted uniformly; a model with lower AUC and low $F$ covers less but fails
+predictably. OCR — not PSNR or SSIM — is the ground truth here because it measures the only
+downstream utility that matters (did the system read the plate?). PSNR and SSIM are evaluated
+later only as training-time surrogates.
 </p>
 
 <!-- ===== 4. METHODOLOGY ===== -->
@@ -774,7 +811,33 @@ All datasets use an 80/10/10 train/validation/test split.
 
 <div class="two-col">
 
-<h3 class="subsec">4.2. Restoration Architectures</h3>
+<h3 class="subsec">4.2. Why a Synthetic Benchmark Is Sufficient for This Study</h3>
+<p>
+The benchmark is intentionally synthetic. Three properties of the problem make this the right
+choice for our question:
+</p>
+<ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.55;">
+  <li><strong>The dominant distortion is physically grounded.</strong> The homography
+  $\mathbf{R}(\alpha,\beta)\,\Pi$ is an exact description of what a flat plate undergoes when
+  viewed off-axis by any pinhole-like camera. Real sensors add scale variation and motion blur,
+  but the angular foreshortening geometry is not modelled — it is the actual physics.</li>
+  <li><strong>The objective is relative, not absolute.</strong> We compare architectures on a
+  shared grid and estimate the <em>shape</em> of the recoverable region, not a deployment-ready
+  error rate. Ranking of models and the location of the failure boundary are properties of the
+  geometry, and the synthetic pipeline isolates those from confounds (scale, illumination,
+  occlusion) that would otherwise obscure the comparison.</li>
+  <li><strong>Ground truth is available only synthetically.</strong> A real-capture benchmark
+  with full coverage of $[0^\circ, 89^\circ]^2$ would require staged captures at thousands of
+  angle pairs, which is infeasible. Synthetic rendering is the only route to a complete grid.</li>
+</ul>
+<p>
+The limitation we therefore accept, and state explicitly: <em>absolute</em> recoverability
+thresholds may shift in real deployments, but the <em>structure</em> of the recoverability space
+— where coverage breaks, how $\alpha$ and $\beta$ differ, which architectures fail consistently
+— is expected to transfer.
+</p>
+
+<h3 class="subsec">4.3. Restoration Architectures</h3>
 <p>
 Five architectures spanning discriminative and generative paradigms are implemented and compared
 (Table&nbsp;2). All models take the $256 \times 64$ distorted image as input and produce a
@@ -834,7 +897,7 @@ $\epsilon \sim \mathcal{N}(0, I)$. At inference, deterministic DDIM sampling
 
 <div class="two-col">
 
-<h3 class="subsec">4.3. Training Protocol</h3>
+<h3 class="subsec">4.4. Training Protocol</h3>
 <p>
 All models are trained on an NVIDIA RTX 3090 GPU. Hyperparameters are tuned using PSNR and SSIM on
 the validation split, with the best checkpoint saved per metric. Discriminative models use AdamW
@@ -844,7 +907,7 @@ training requires substantially more steps due to the multi-step denoising objec
 Each model is trained independently on both datasets (Standard and Extreme), yielding 10 model-dataset pairs.
 </p>
 
-<h3 class="subsec">4.4. Full-Grid Evaluation</h3>
+<h3 class="subsec">4.5. Full-Grid Evaluation</h3>
 <p>
 A single shared evaluation set covers all integer angle pairs in $[0, 89]^2$ (8,100 pairs).
 Sampling density is 2 images per pair where $\alpha \leq 60$ and $\beta \leq 60$ (easy region),
@@ -864,6 +927,12 @@ OCR is performed by Tesseract v4 (LSTM mode, digit-only filter). Each restored i
 grayscale, contrast-normalised, upscaled 2x, and binarised. A multi-strategy fallback (Otsu,
 adaptive threshold, colour inversion) is applied per digit if the primary recognition fails.
 The final recognised string is compared to the ground truth for digit-level and plate-level accuracy.
+We note that this preprocessing chain (contrast normalisation, $2\times$ upscaling, binarisation,
+and per-digit fallbacks) is itself performing light restoration work. The reported OCR accuracies
+therefore reflect the combined effect of network-based restoration and Tesseract-side preprocessing;
+a stronger end-to-end plate OCR (e.g.&nbsp;PaddleOCR or CRNN-based pipelines) may shift the
+absolute boundary numbers, though the relative ranking between architectures is expected to be
+stable.
 </p>
 
 </div><!-- close two-col for figure -->
@@ -1040,9 +1109,11 @@ but incorrect digit sequences when the conditional input carries insufficient si
 </p>
 <p>
 Restormer achieves the best AUC on both datasets (0.920 and 0.921) and the lowest $F$ on Standard
-(0.095), confirming that its global attention mechanism is robust to the choice of angle distribution.
-Comparing Standard and Extreme datasets, AUC values are nearly identical ($\Delta < 0.002$),
-indicating that training distribution shift does not substantially alter the recoverable boundary.
+(0.095). On Extreme, however, its $F$ rises to 0.209 and U-Net Conditional takes the lowest
+$F$ (0.115); Restormer's coverage is therefore robust to training-distribution shift, but its
+interior consistency degrades. Comparing Standard and Extreme datasets, AUC values are nearly
+identical ($\Delta < 0.002$), indicating that training distribution shift does not substantially
+alter the recoverable boundary itself — only its interior reliability.
 </p>
 
 </div>
@@ -1067,7 +1138,7 @@ indicating that training distribution shift does not substantially alter the rec
     </thead>
     <tbody>
       <tr><td class="td-left">U-Net (baseline)</td>  <td>0.915</td><td>0.103</td><td>0.915</td><td>0.146</td></tr>
-      <tr><td class="td-left">U-Net Conditional</td> <td>0.916</td><td>0.145</td><td>0.917</td><td>0.115</td></tr>
+      <tr><td class="td-left">U-Net Conditional</td> <td>0.916</td><td>0.145</td><td>0.917</td><td class="best">0.115</td></tr>
       <tr><td class="td-left">Restormer</td>         <td class="best">0.920</td><td class="best">0.095</td><td class="best">0.921</td><td>0.209</td></tr>
       <tr><td class="td-left">GAN-Pix2Pix</td>      <td>0.909</td><td>0.168</td><td>0.899</td><td>0.173</td></tr>
       <tr><td class="td-left">Diffusion-SR3</td>     <td>0.889</td><td>0.572</td><td>0.886</td><td>1.124</td></tr>
@@ -1149,12 +1220,15 @@ digits are distorted. SSIM should not be used as the primary validation metric f
   <img src="figures/generated/fig_comparison_panel.png"
        alt="Plate restoration examples by each model at three angle regimes">
   <figcaption>
-    <strong>Fig. 8.</strong> Qualitative plate restoration examples. Columns show three angle regimes
-    of increasing difficulty; rows show each model's output. The first two rows (distorted input and
-    ground truth) are shared reference. Discriminative models (U-Net variants, Restormer) produce
-    legible digit sequences in the partial-recovery and single-axis extreme cases, while
-    generative models (GAN-Pix2Pix, Diffusion-SR3) show visibly hallucinated or distorted outputs.
-    All models fail in the double-extreme case, consistent with the $\sim 93.4\%$ maximal
+    <strong>Fig. 8.</strong> Qualitative plate restoration examples at three representative angle
+    regimes of increasing difficulty: <em>good recovery</em>
+    $(\alpha=30^\circ,\,\beta=88^\circ)$, single-axis extreme; <em>partial recovery</em>
+    $(\alpha=85^\circ,\,\beta=65^\circ)$, mixed extreme; and <em>failure</em>
+    $(\alpha=88^\circ,\,\beta=82^\circ)$, double extreme. Rows show each model's output; the first
+    two rows (distorted input and ground truth) are shared reference. Discriminative models (U-Net
+    variants, Restormer) produce legible digit sequences in the good- and partial-recovery cases,
+    while generative models (GAN-Pix2Pix, Diffusion-SR3) show visibly hallucinated or distorted
+    outputs. All models fail in the double-extreme case, consistent with the $\sim 93.4\%$ maximal
     recoverability boundary.
   </figcaption>
 </figure>
@@ -1166,13 +1240,16 @@ digits are distorted. SSIM should not be used as the primary validation metric f
 
 <h3 class="subsec">6.1. Implications for Smart City Sensor Deployment</h3>
 <p>
-The 93.4% maximal recoverability boundary has a direct, quantitative implication for urban
-infrastructure planners. If the worst-case viewing angle for a given fixed sensor installation is
-bounded by $\alpha < 80^\circ$ <em>and</em> $\beta < 80^\circ$, then software-only restoration
-pipelines are sufficient for LPR without any hardware upgrade. This covers the vast majority of
-practical ATM camera, body-worn device, and streetlight camera geometries. Only sensors positioned
-with extreme lateral tilt <em>and</em> extreme elevation simultaneously would fall outside the
-recoverable region.
+The 93.4% maximal recoverability boundary (obtained under the synthetic conditions of Section
+4.1 and subject to the Tesseract-side caveats of Section 4.5) suggests a first, quantitative
+planning guideline for urban infrastructure. If the worst-case viewing angle for a given fixed
+sensor installation is bounded by $\alpha < 80^\circ$ <em>and</em> $\beta < 80^\circ$, then a
+software restoration pipeline <em>may</em> be sufficient to recover legible plates without a
+hardware upgrade; this envelope covers the majority of practical ATM camera, body-worn device,
+and streetlight camera geometries, whereas sensors placed with extreme lateral tilt <em>and</em>
+extreme elevation simultaneously fall outside it. The numeric boundary must be re-validated on
+real sensor imagery before it is used as a deployment criterion; synthetic-only evaluation is a
+necessary but not sufficient basis for such guarantees (Section 6.4).
 </p>
 <p>
 The alpha-versus-beta asymmetry has a practical corollary for camera placement: lateral mounting
@@ -1184,7 +1261,40 @@ Urban planners seeking to enable opportunistic LPR from pole-mounted sensors sho
 constraining the azimuthal angle over the elevational angle in sensor placement guidelines.
 </p>
 
-<h3 class="subsec">6.2. Architecture Choice for Urban Deployment</h3>
+<h3 class="subsec">6.2. Why the Observed Patterns Emerge</h3>
+<p>
+The three recurring empirical patterns — lateral rotations are harder than elevational;
+discriminative models dominate generative ones; and Diffusion-SR3 fails worst at extreme angles —
+each follow from the structure of the problem rather than from implementation details.
+</p>
+<p>
+<em>Why lateral rotation is harder.</em> A license plate is a horizontal strip: information is
+encoded in the horizontal separation of digit strokes, not in the vertical extent. An elevational
+rotation $\beta$ compresses vertical extent but leaves the horizontal digit sequence intact; a
+lateral rotation $\alpha$ compresses exactly the axis along which digit identity is encoded,
+collapsing adjacent characters into each other long before the plate becomes geometrically
+unrecognisable. The $\alpha/\beta$ asymmetry visible in every model is therefore a consequence of
+the information geometry of plates, not of any particular network.
+</p>
+<p>
+<em>Why discriminative models win.</em> Our networks are trained end-to-end with paired
+(distorted, clean) samples and an L1 + SSIM objective. This is a direct regression of the
+distortion-to-character map — exactly the problem the networks must solve at inference. GAN
+adversarial losses and diffusion denoising objectives are designed for <em>perceptual
+plausibility</em>, a different and in fact competing criterion: a plausible plate need not be
+the correct plate. The fact that Restormer and the U-Net variants cluster near the top of
+Table&nbsp;4 on both AUC and $F$ reflects this alignment between objective and task.
+</p>
+<p>
+<em>Why Diffusion-SR3 is unstable at extreme angles.</em> At high $\alpha$ or $\beta$, the input
+carries low signal-to-noise and the conditional denoising network is free to sample any plausible
+digit string consistent with the remaining evidence. This is exactly the regime where diffusion
+hallucinates — plausible but wrong. The reliability score $F$ captures this directly: Diffusion-SR3
+reaches $F = 1.124$ on DS-E, an order of magnitude worse than any discriminative model, with
+interior failures scattered far into the otherwise-recoverable region.
+</p>
+
+<h3 class="subsec">6.3. Architecture Choice for Urban Deployment</h3>
 <p>
 For practical urban deployment, discriminative models are the clear choice. They are easier to
 validate through explicit loss functions, more stable to train, and their PSNR improvements
@@ -1207,7 +1317,7 @@ At this latency, real-time processing of $> 100$ frames per second is feasible o
 sufficient for continuous fixed-sensor LPR streams.
 </p>
 
-<h3 class="subsec">6.3. Training Distribution Shape Matters</h3>
+<h3 class="subsec">6.4. Training Distribution Shape Matters</h3>
 <p>
 Boundary-AUC is nearly identical across the Standard and Extreme datasets ($\Delta < 0.002$ for
 discriminative models), indicating that the recoverable region is bounded by the physics of
@@ -1225,7 +1335,34 @@ therefore invest effort in angular <em>diversity and corner coverage</em> rather
 collecting more samples in the easy regime.
 </p>
 
-<h3 class="subsec">6.4. Limitations and Scope</h3>
+<h3 class="subsec">6.5. Practical Implications for Urban Sensor Portfolios</h3>
+<p>
+The recoverability map translates into concrete, actionable guidelines for city planners,
+camera-portfolio owners, and forensic analysts:
+</p>
+<ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.55;">
+  <li><strong>Sensor viability.</strong> ATM cameras, body-worn cameras, and pole-mounted CCTV
+  typically produce captures in the interior of the recoverable region ($\alpha, \beta < 70^\circ$)
+  and are therefore candidate opportunistic LPR sources without hardware change, provided the
+  sensor resolution resolves digit strokes at the typical vehicle distance. Dashcams and
+  handheld smartphones, which move relative to traffic, have broader and less predictable angle
+  distributions — they benefit most from conditional (angle-aware) restoration.</li>
+  <li><strong>Camera placement.</strong> When siting a new fixed sensor whose secondary use
+  includes LPR, the $\alpha/\beta$ asymmetry implies that <em>elevational</em> tilt (camera
+  mounted higher) costs less recoverable coverage than <em>lateral</em> tilt (camera placed
+  off the traffic axis). A $60^\circ$ elevation is tolerable; a $60^\circ$ lateral tilt is
+  marginal.</li>
+  <li><strong>Forensic triage.</strong> For retrospective case work on archived footage, the
+  recoverability map enables a fast pre-screen: captures whose estimated $(\alpha, \beta)$ fall
+  in the upper-right corner $(\alpha, \beta > 80^\circ)$ can be flagged as unrecoverable by any
+  current method, saving analyst time.</li>
+  <li><strong>Expected-gain estimation.</strong> Given a sensor portfolio with known geometry
+  distribution, one can overlay that distribution on the recoverability map to estimate the
+  <em>expected</em> fraction of captured vehicles that the restoration pipeline will render
+  readable — a quantity directly useful for ROI and procurement decisions.</li>
+</ul>
+
+<h3 class="subsec">6.6. Limitations and Scope</h3>
 <p>
 This study uses a synthetic dataset with several simplifying assumptions. Camera-to-plate distance
 is held constant, meaning all plates appear at the same image scale regardless of angle; real
@@ -1456,6 +1593,58 @@ and no hardware modifications.
       In <em>Proceedings of the 6th International Conference on Mobile Systems, Applications,
       and Services (MobiSys)</em> (pp. 29&ndash;39). ACM.
       <a href="https://doi.org/10.1145/1378600.1378605">https://doi.org/10.1145/1378600.1378605</a>
+    </li>
+    <li id="r29">
+      <span class="rnum">[29]</span>
+      Laroca, R., Cardoso, E. V., Lucio, D. R., Estevam, V., &amp; Menotti, D. (2022).
+      On the cross-dataset generalization in license plate recognition.
+      In <em>Proceedings of the 17th International Joint Conference on Computer Vision,
+      Imaging and Computer Graphics Theory and Applications (VISAPP)</em>.
+      <a href="https://doi.org/10.5220/0010846800003124">https://doi.org/10.5220/0010846800003124</a>
+    </li>
+    <li id="r30">
+      <span class="rnum">[30]</span>
+      Silva, S. M., &amp; Jung, C. R. (2018). License plate detection and recognition in
+      unconstrained scenarios. In <em>European Conference on Computer Vision (ECCV)</em>
+      (pp. 580&ndash;596). Springer.
+      <a href="https://doi.org/10.1007/978-3-030-01258-8_36">https://doi.org/10.1007/978-3-030-01258-8_36</a>
+    </li>
+    <li id="r31">
+      <span class="rnum">[31]</span>
+      Xu, H., Guo, Z., Wang, D., Zhou, X., &amp; Zheng, Y. (2021). 2D license plate recognition
+      based on automatic perspective rectification. In <em>2020 25th International Conference
+      on Pattern Recognition (ICPR)</em> (pp. 7803&ndash;7810). IEEE.
+      <a href="https://doi.org/10.1109/ICPR48806.2021.9413152">https://doi.org/10.1109/ICPR48806.2021.9413152</a>
+    </li>
+    <li id="r32">
+      <span class="rnum">[32]</span>
+      Zou, Y., Wang, S., Xu, J., &amp; Li, H. (2019). Semantic super-resolution for
+      extremely low-resolution vehicle license plates. In <em>ICASSP 2019 &ndash; IEEE
+      International Conference on Acoustics, Speech and Signal Processing</em>
+      (pp. 3772&ndash;3776).
+      <a href="https://doi.org/10.1109/ICASSP.2019.8682507">https://doi.org/10.1109/ICASSP.2019.8682507</a>
+    </li>
+    <li id="r33">
+      <span class="rnum">[33]</span>
+      Hamdi, A., Chan, Y. K., &amp; Koo, V. C. (2021). A new image enhancement and
+      super-resolution technique for license plate recognition. <em>Heliyon</em>,
+      <em>7</em>(11), e08341.
+      <a href="https://doi.org/10.1016/j.heliyon.2021.e08341">https://doi.org/10.1016/j.heliyon.2021.e08341</a>
+    </li>
+    <li id="r34">
+      <span class="rnum">[34]</span>
+      Zhang, Z. (2000). A flexible new technique for camera calibration.
+      <em>IEEE Transactions on Pattern Analysis and Machine Intelligence</em>,
+      <em>22</em>(11), 1330&ndash;1334.
+      <a href="https://doi.org/10.1109/34.888718">https://doi.org/10.1109/34.888718</a>
+    </li>
+    <li id="r35">
+      <span class="rnum">[35]</span>
+      Frome, A., Cheung, G., Abdulkader, A., Zennaro, M., Wu, B., Bissacco, A., Adam, H.,
+      Neven, H., &amp; Vincent, L. (2009). Large-scale privacy protection in Google Street
+      View. In <em>Proceedings of the IEEE International Conference on Computer Vision
+      (ICCV)</em> (pp. 2373&ndash;2380).
+      <a href="https://doi.org/10.1109/ICCV.2009.5459413">https://doi.org/10.1109/ICCV.2009.5459413</a>
     </li>
   </ol>
 </div>
