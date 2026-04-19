@@ -1005,33 +1005,22 @@ foreshortening still leaves digit contrast largely intact.
 
 <h3 class="subsec">5.3. Recoverability Boundaries and Maximal Coverage</h3>
 <p>
-Fig.&nbsp;6 overlays the recoverability boundaries (Eq.&nbsp;3&ndash;4) for all ten model-dataset
-pairs. The boundaries cluster tightly, confirming that the recoverable region is primarily
-determined by the physical information content of the distorted image rather than by the choice
-of restoration architecture or training distribution.
-</p>
-<p>
 Taking the pointwise maximum over all models and datasets yields the <em>maximal recoverability
-boundary</em> (thick black curve), which encloses a boundary-AUC of 0.934. This means that even
-under the best-case scenario combining all models and training conditions, only 93.4% of the
-$[0^\circ, 89^\circ]^2$ angle grid can be recovered at $\geq 90\%$ plate OCR accuracy. The
-remaining 6.6% (the upper-right corner) is physically unrecoverable: the signal energy in the
-severely foreshortened plate image is too low for any current restoration method to extract a
-recognisable digit sequence.
+boundary</em>, which encloses a boundary-AUC of 0.934. This means that even under the best-case
+scenario combining all models and training conditions, only 93.4% of the $[0^\circ, 89^\circ]^2$
+angle grid can be recovered at $\geq 90\%$ plate OCR accuracy. The remaining 6.6% (the upper-right
+corner, where both $\alpha$ and $\beta$ exceed $\sim 80^\circ$) is physically unrecoverable:
+the signal energy in the severely foreshortened plate image is too low for any current restoration
+method to extract a recognisable digit sequence. Across all ten model-dataset pairs the
+per-model boundaries cluster tightly (see Table&nbsp;4), confirming that the recoverable region
+is determined by the physics of foreshortening rather than by architecture or training
+distribution. The $\alpha$-axis contracts faster than the $\beta$-axis, confirming the lateral
+rotation asymmetry.
 </p>
 
 </div>
 
-<figure>
-  <img src="figures/generated/fig05_recoverability_boundaries_schematic.png"
-       alt="Recoverability boundaries for all models">
-  <figcaption>
-    <strong>Fig. 6.</strong> Recoverability boundaries ($T = 0.9$ OCR threshold) for all five models
-    (coloured curves) and the maximal (union) boundary (black solid curve, AUC = 0.934). The shaded
-    red region marks the unrecoverable zone beyond $\sim 80^\circ$ in both axes. All boundaries
-    cluster tightly: architecture choice affects consistency more than coverage extent.
-    The $\alpha$-axis contracts faster than the $\beta$-axis, confirming the lateral rotation asymmetry.
-  </figcaption>
+<!-- (removed Fig 6 recoverability boundary schematic: AUCs stated in prose and Table 4)
 </figure>
 
 <div class="two-col">
@@ -1092,7 +1081,7 @@ surrogate for OCR accuracy during model training and validation, avoiding the co
 of running OCR on every epoch checkpoint.
 </p>
 <p>
-Fig.&nbsp;7 shows the PSNR-OCR scatter for Restormer and Diffusion-SR3 on the Standard dataset,
+Fig.&nbsp;6 shows the PSNR-OCR scatter for Restormer and Diffusion-SR3 on the Standard dataset,
 with each point representing one angle pair in the evaluation grid. The linear relationship is
 tight for both models:
 </p>
@@ -1111,7 +1100,7 @@ across the full range, confirming that plates sharing similar PSNR values delive
 OCR outcomes. PSNR is thus a reliable training proxy; optimising it implicitly optimises OCR.
 </p>
 <p>
-By contrast, the SSIM-OCR relationship is threshold-like (Fig.&nbsp;8): OCR remains near zero
+By contrast, the SSIM-OCR relationship is threshold-like (Fig.&nbsp;7): OCR remains near zero
 until SSIM reaches approximately 0.87&ndash;0.88, then rises sharply. The linear fits:
 </p>
 <div class="eq-block">
@@ -1134,7 +1123,7 @@ digits are distorted. SSIM should not be used as the primary validation metric f
   <img src="figures/generated/fig07_psnr_ocr_correlation.png"
        alt="PSNR vs OCR accuracy">
   <figcaption>
-    <strong>Fig. 7.</strong> Plate-level PSNR vs. plate-level OCR accuracy for Restormer (left,
+    <strong>Fig. 6.</strong> Plate-level PSNR vs. plate-level OCR accuracy for Restormer (left,
     blue) and Diffusion-SR3 (right, red) on the Standard dataset. Solid lines show the exact linear
     fits (Eqs.&nbsp;10&ndash;11). Binned means (circles) and one-standard-deviation error bars
     confirm a tight, low-variance relationship across the full PSNR range. Horizontal dashed line
@@ -1146,7 +1135,7 @@ digits are distorted. SSIM should not be used as the primary validation metric f
   <img src="figures/generated/fig08_ssim_ocr_threshold.png"
        alt="SSIM vs OCR accuracy">
   <figcaption>
-    <strong>Fig. 8.</strong> Plate-level SSIM vs. plate-level OCR accuracy (Eqs.&nbsp;12&ndash;13).
+    <strong>Fig. 7.</strong> Plate-level SSIM vs. plate-level OCR accuracy (Eqs.&nbsp;12&ndash;13).
     OCR remains near zero below SSIM $\approx 0.87$&ndash;$0.88$, then rises sharply. Wide error bars
     in the transition zone indicate that SSIM is an unreliable training proxy: two plates at
     identical SSIM can differ by nearly 100% in OCR accuracy.
@@ -1157,7 +1146,7 @@ digits are distorted. SSIM should not be used as the primary validation metric f
   <img src="figures/generated/fig_comparison_panel.png"
        alt="Plate restoration examples by each model at three angle regimes">
   <figcaption>
-    <strong>Fig. 9.</strong> Qualitative plate restoration examples. Columns show three angle regimes
+    <strong>Fig. 8.</strong> Qualitative plate restoration examples. Columns show three angle regimes
     of increasing difficulty; rows show each model's output. The first two rows (distorted input and
     ground truth) are shared reference. Discriminative models (U-Net variants, Restormer) produce
     legible digit sequences in the partial-recovery and single-axis extreme cases, while
