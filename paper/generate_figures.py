@@ -798,39 +798,33 @@ def fig_recoverability_schematic():
 
     alphas_max, betas_max = make_boundary(0.934, 0.86)
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5.5))
+    fig, ax = plt.subplots(figsize=(7, 7))
 
-    for ax in (ax1, ax2):
-        for model, auc, alpha_pen, ls, lw in specs:
-            alphas, betas = make_boundary(auc, alpha_pen)
-            ax.plot(alphas, betas, linestyle=ls, linewidth=lw,
-                    color=MODEL_COLORS[model], label=f"{model} (AUC={auc:.3f})")
-            ax.fill_between(alphas, 0, betas, alpha=0.04, color=MODEL_COLORS[model])
+    for model, auc, alpha_pen, ls, lw in specs:
+        alphas, betas = make_boundary(auc, alpha_pen)
+        ax.plot(alphas, betas, linestyle=ls, linewidth=lw,
+                color=MODEL_COLORS[model], label=f"{model} (AUC={auc:.3f})")
+        ax.fill_between(alphas, 0, betas, alpha=0.04, color=MODEL_COLORS[model])
 
-        ax.plot(alphas_max, betas_max, color="black", linewidth=2.8,
-                linestyle="-", label="Maximal boundary (AUC=0.934)", zorder=5)
-        ax.fill_between(np.arange(80, 90), 80, 89, alpha=0.15, color="red", zorder=0)
+    ax.plot(alphas_max, betas_max, color="black", linewidth=2.8,
+            linestyle="-", label="Maximal boundary (AUC=0.934)", zorder=5)
+    ax.fill_between(np.arange(80, 90), 80, 89, alpha=0.15, color="red", zorder=0)
+    ax.text(84, 84, "Unrecov.", fontsize=8, color="darkred", ha="center", va="center")
 
-    # Full view
-    ax1.set_xlim(0, 89); ax1.set_ylim(0, 89)
-    ax1.set_xlabel("Azimuthal rotation α (degrees)")
-    ax1.set_ylabel("Elevational rotation β (degrees)")
-    ax1.set_title("Full Angle Grid [0°, 89°]²", fontweight="bold")
-    ax1.text(83, 83, "Unrecov.", fontsize=7.5, color="darkred", ha="center", va="center")
-    ax1.set_aspect("equal")
-    ax1.legend(loc="lower left", fontsize=7.5, framealpha=0.9)
-    ax1.plot([0, 89], [0, 89], color="lightgray", linewidth=0.7, linestyle="--")
-
-    # Zoomed view — critical upper-right quadrant where differences appear
-    ax2.set_xlim(55, 89); ax2.set_ylim(55, 89)
-    ax2.set_xlabel("Azimuthal rotation α (degrees)")
-    ax2.set_ylabel("Elevational rotation β (degrees)")
-    ax2.set_title("Zoomed: Critical Region (55°–89°)", fontweight="bold")
-    ax2.text(83, 83, "Unrecov.", fontsize=7.5, color="darkred", ha="center", va="center")
-    ax2.set_aspect("equal")
-
-    fig.suptitle("Recoverability Boundaries per Model  (OCR ≥ 90% threshold, T = 0.9)",
+    ax.set_xlim(0, 89); ax.set_ylim(0, 89)
+    ax.set_xlabel("Azimuthal rotation α (degrees)", fontsize=11)
+    ax.set_ylabel("Elevational rotation β (degrees)", fontsize=11)
+    ax.set_title("Recoverability Boundaries per Model\n(OCR ≥ 90% threshold, T = 0.9)",
                  fontweight="bold")
+    ax.set_aspect("equal")
+    ax.legend(loc="lower left", fontsize=8.5, framealpha=0.92)
+    ax.plot([0, 89], [0, 89], color="lightgray", linewidth=0.7, linestyle="--")
+
+    # Annotate the asymmetry
+    ax.annotate("α harder\nthan β", xy=(75, 45), xytext=(60, 30),
+                fontsize=8, color="gray",
+                arrowprops=dict(arrowstyle="->", color="gray", lw=0.8))
+
     plt.tight_layout()
     save(fig, "fig08_recoverability_boundaries_schematic")
 

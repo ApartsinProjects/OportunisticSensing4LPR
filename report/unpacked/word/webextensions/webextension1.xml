@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<we:webextension xmlns:we="http://schemas.microsoft.com/office/webextensions/webextension/2010/11" id="{51B09FBB-B1EF-40B5-ABE9-D6A5A3AECF5E}">
+  <we:reference id="f5112914-51aa-49ee-8046-d9cf4a21d5a3" version="2.141.0.0" store="\\STOPC\PaperPalAddin" storeType="Filesystem"/>
+  <we:alternateReferences/>
+  <we:properties/>
+  <we:bindings/>
+  <we:snapshot xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"/>
+</we:webextension>
