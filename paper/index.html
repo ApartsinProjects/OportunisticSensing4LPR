@@ -428,6 +428,18 @@ LPR to succeed?
 </p>
 
 <p>
+Public benchmarks for recognition tasks are typically task-purposed: their captures are curated
+under controlled or semi-controlled conditions that foreground readability and downstream
+success. This curation is appropriate when the task is the primary goal of the sensor, but it
+leaves an inferential gap when the same sensor is used opportunistically for a secondary task.
+The conditions under which opportunistic sensing operates, namely the extreme corners of the
+acquisition-parameter space, are systematically underrepresented in benchmarks that were never
+designed to cover them. A synthetic benchmark that samples the full parameter grid, including
+the extreme corners, is therefore a natural tool for characterising the boundary of what
+opportunistic sensing can recover; its role is not to replace real-world evaluation but to map
+a regime that real benchmarks do not reach.
+</p>
+<p>
 Existing LPR research assumes near-frontal capture, typically $|\alpha|, |\beta| \leq 30^\circ$,
 and degrades rapidly beyond this range
 <cite>(<a href="#r7">Shashirangana et al., 2021</a>; <a href="#r8">Anagnostopoulos et al., 2008</a>)</cite>.
@@ -1225,16 +1237,11 @@ digits are distorted. SSIM should not be used as the primary validation metric f
 
 <h3 class="subsec">6.1. Interpretation of the Observed Patterns</h3>
 <p>
-Three empirical patterns in the results are properties of the problem structure rather than of
-implementation details: lateral rotations are consistently harder to reconstruct than elevational
-rotations, discriminative models outperform generative alternatives, and Diffusion-SR3 is most
-unstable at extreme angles. A fourth finding concerns the influence of the training-angle
-distribution on interior consistency rather than on coverage.
-</p>
-<p>
-The $\alpha/\beta$ asymmetry reflects the information geometry of the plate itself. A license
-plate is a horizontal strip in which digit identity is encoded in the horizontal separation of
-character strokes rather than in vertical extent. An elevational rotation $\beta$ compresses
+Three empirical patterns follow from the structure of the problem rather than from implementation
+details, and a fourth concerns how the training-angle distribution affects interior consistency
+rather than coverage. The $\alpha/\beta$ asymmetry reflects the information geometry of the plate
+itself: a license plate is a horizontal strip in which digit identity is encoded in the horizontal
+separation of character strokes rather than in vertical extent. An elevational rotation $\beta$ compresses
 vertical extent but leaves the horizontal digit sequence intact, whereas a lateral rotation
 $\alpha$ compresses the axis along which the digits are encoded, collapsing adjacent characters
 into each other long before the plate becomes geometrically unrecognisable. This asymmetry is
@@ -1316,22 +1323,9 @@ from pole-mounted sensors should prioritise constraining the azimuthal angle ove
 angle in sensor placement guidelines.
 </p>
 <p>
-Collecting these observations gives four concrete guidelines for city planners,
-camera-portfolio owners, and forensic analysts:
+Two additional deployment use-cases follow directly from the recoverability map:
 </p>
 <ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.55;">
- <li><strong>Sensor viability.</strong> ATM cameras, body-worn cameras, and pole-mounted CCTV
- typically produce captures in the interior of the recoverable region
- ($\alpha, \beta &lt; 70^\circ$) and are therefore candidate opportunistic LPR sources without
- hardware change, provided the sensor resolution resolves digit strokes at the typical vehicle
- distance. Dashcams and handheld smartphones, which move relative to traffic, have broader and
- less predictable angle distributions and benefit most from conditional (angle-aware)
- restoration.</li>
- <li><strong>Camera placement.</strong> When siting a new fixed sensor whose secondary use
- includes LPR, the $\alpha/\beta$ asymmetry implies that <em>elevational</em> tilt (camera
- mounted higher) costs less recoverable coverage than <em>lateral</em> tilt (camera placed
- off the traffic axis). A $60^\circ$ elevation is tolerable; a $60^\circ$ lateral tilt is
- marginal.</li>
  <li><strong>Forensic triage.</strong> For retrospective case work on archived footage, the
  recoverability map supports fast pre-screening: captures whose estimated $(\alpha, \beta)$
  fall in the upper-right corner ($\alpha, \beta &gt; 80^\circ$) can be flagged as unrecoverable
@@ -1391,16 +1385,21 @@ serve as a training-time surrogate, which materially simplifies the model-select
 making OCR-in-the-loop validation unnecessary.
 </p>
 <p>
-In short: within the benchmark, most oblique viewing angles yield recoverable plates, a small
+Within the benchmark, most oblique viewing angles yield recoverable plates, a small
 double-extreme corner of the angle grid does not, and these findings, together with the framework
 itself, transfer to a broader class of opportunistic-sensing problems. The absolute numbers
-belong to the benchmark and require validation on real captures; the structural findings and the
-framework are the transferable contribution. Future work should validate the LPR boundary on a
-public oblique-capture dataset (for example RodoSol-ALPR or UFPR-ALPR), instantiate the framework
-on the candidate tasks sketched in Section&nbsp;6.2 (face recognition under occlusion, scene-text
-reading under glare, gait recognition from non-frontal CCTV), and report multi-seed statistics
-for the interior-consistency metric $F$ to establish confidence intervals on the architecture
-ordering.
+belong to the benchmark; the structural findings and the framework are the transferable
+contribution.
+</p>
+<p>
+A natural future-work direction follows from the observation, already raised in the Introduction,
+that public benchmarks do not sample the extreme parameter regimes in which opportunistic sensing
+actually operates. Closing this gap, for LPR and for the candidate tasks listed in
+Section&nbsp;6.2, requires either synthetic benchmarks of the kind presented here (extended to
+additional tasks and to richer acquisition models) or bespoke controlled-capture datasets that
+systematically sweep the parameter space. Within LPR specifically, complementary next steps are
+multi-seed statistics on $F$ to establish confidence intervals on the architecture ordering, and
+a sensitivity analysis with a stronger end-to-end plate OCR.
 </p>
 
 <h2 class="sec">Author Contributions</h2>
