@@ -720,11 +720,11 @@ distinguishable from a boundary at $\beta=0$):
 </p>
 
 <div class="eq-block">
- $$\beta_{\max}(\alpha) = \max\!\left(\{0\} \cup \{\beta \in [0, 89] \mid r_T(\alpha,\beta) = 1\}\right)$$
+ $$\beta_{\max}(\alpha) = \max\!\left(\{-1\} \cup \{\beta \in [0, 89] \mid r_T(\alpha,\beta) = 1\}\right)$$
  <span class="eq-num">(3)</span>
 </div>
 <div class="eq-block">
- $$\alpha_{\max}(\beta) = \max\!\left(\{0\} \cup \{\alpha \in [0, 89] \mid r_T(\alpha,\beta) = 1\}\right)$$
+ $$\alpha_{\max}(\beta) = \max\!\left(\{-1\} \cup \{\alpha \in [0, 89] \mid r_T(\alpha,\beta) = 1\}\right)$$
  <span class="eq-num">(4)</span>
 </div>
 
@@ -740,9 +740,14 @@ $C_2 = \{(\alpha_{\max}(\beta), \beta)\}$ for $\alpha, \beta \in [0, 89]$. The
 </div>
 
 <p>
-To capture the <em>consistency</em> of recoverability inside $B_T$, we measure how deeply failures
-penetrate the recoverable region. For each failed angle pair $(\alpha_h, \beta_h)$ inside $B_T$,
-compute its minimum Euclidean distance to the boundary:
+Boundary-AUC measures the area enclosed by the outer envelope of the recoverable region and
+therefore quantifies its <em>coverage</em>; by construction it does not penalise non-convex
+structure, for instance holes of failure inside the envelope, which can inflate AUC relative to
+the actually recoverable area. To capture the <em>consistency</em> of recoverability inside
+$B_T$, we measure how deeply failures penetrate the recoverable region, a quantity conceptually
+related to erosion-style measures in mathematical morphology
+<cite>(<a href="#r37">Serra, 1982</a>)</cite>. For each failed angle pair $(\alpha_h, \beta_h)$
+inside $B_T$, compute its minimum Euclidean distance to the boundary:
 </p>
 
 <div class="eq-block">
@@ -1323,12 +1328,14 @@ numbers.
 
 <h3 class="subsec">6.3. Implications for Smart City Deployment</h3>
 <p>
-The 93.4% maximal recoverability boundary provides a quantitative planning guideline for urban
-infrastructure. If the worst-case viewing angle for a fixed sensor installation is bounded by
-$\alpha &lt; 80^\circ$ and $\beta &lt; 80^\circ$, then a software restoration pipeline is capable
-of recovering legible plates without hardware modification; this envelope covers the majority of
-practical ATM-camera, body-worn-device, and streetlight-camera geometries, whereas sensors placed
-with extreme lateral tilt and extreme elevation simultaneously fall outside it.
+The 93.4% maximal recoverability boundary provides a quantitative first-order planning guideline
+for urban infrastructure. Under the assumptions of the benchmark, if the worst-case viewing angle
+for a fixed sensor installation is bounded by $\alpha &lt; 80^\circ$ and $\beta &lt; 80^\circ$,
+then software-only restoration <em>appears capable</em> of recovering legible plates without
+hardware modification; this envelope covers the majority of practical ATM-camera,
+body-worn-device, and streetlight-camera geometries, whereas sensors placed with extreme lateral
+tilt and extreme elevation simultaneously fall outside it. Translating this guideline into a
+deployment criterion requires the real-data validation discussed in Section&nbsp;7.
 </p>
 <p>
 Among the evaluated architectures, discriminative models are the clear operational choice: they
@@ -1731,6 +1738,11 @@ The authors declare no conflict of interest.
  The DET curve in assessment of detection task performance. In
  <em>Proceedings of Eurospeech 1997</em> (pp. 1895&ndash;1898).
  <a href="https://doi.org/10.21437/Eurospeech.1997-504">https://doi.org/10.21437/Eurospeech.1997-504</a>
+ </li>
+ <li id="r37">
+ <span class="rnum">[37]</span>
+ Serra, J. (1982). <em>Image Analysis and Mathematical Morphology</em>.
+ Academic Press, London.
  </li>
  </ol>
 </div>
