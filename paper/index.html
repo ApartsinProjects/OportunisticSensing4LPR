@@ -1368,29 +1368,39 @@ the relative ranking of architectures is expected to remain stable.
 
 <p>
 This paper introduced <em>recoverability maps</em>, a task-agnostic framework for quantifying
-where in a parameterised degradation space an opportunistic-sensing task remains reliable, and
-demonstrated it on oblique-view license plate recognition. The framework builds on two summary
-measures adapted from classical operating-characteristic analysis: a boundary area-under-curve
-that captures coverage, and a reliability score $F$ that captures interior consistency.
+where in a parameterised degradation space an opportunistic-sensing task remains reliable. The
+framework builds on two summary measures adapted from classical operating-characteristic
+analysis: a boundary area-under-curve that captures coverage, and a reliability score $F$ that
+captures interior consistency. We demonstrated the framework on oblique-view license plate
+recognition as a concrete first instance.
 </p>
 <p>
-Under the LPR benchmark, approximately 93.4% of the $[0^\circ, 89^\circ]^2$ angle space is
-recoverable at $\geq 90\%$ plate OCR accuracy; beyond roughly $80^\circ$ in both axes
-simultaneously none of the evaluated architectures extracts a reliable plate number.
-Discriminative architectures (U-Net, U-Net Conditional, Restormer) consistently outperform
-generative alternatives (GAN-Pix2Pix, Diffusion-SR3) in coverage, consistency, and reliability.
-PSNR is a reliable training proxy for OCR accuracy ($R^2 \geq 0.979$), enabling efficient
-checkpoint selection without running OCR during training. The $\alpha$-versus-$\beta$ asymmetry
-shows that lateral azimuthal rotation is harder to correct than elevational rotation, informing
-camera placement guidelines for smart city deployments.
+Applied to LPR, the framework yields a sharp quantitative envelope. Approximately $93.4\%$ of
+the $[0^\circ, 89^\circ]^2$ angle grid is recoverable at $\geq 90\%$ plate OCR accuracy; beyond
+roughly $80^\circ$ in both axes simultaneously, none of the evaluated architectures extracts a
+reliable plate number. The most intellectually load-bearing finding, however, is structural: all
+five restoration architectures share the same $\alpha/\beta$ asymmetry, in which lateral rotation
+is consistently harder to correct than elevational rotation. This asymmetry is a property of the
+input signal, namely the horizontal information geometry of the plate, rather than of any
+particular network, and it carries directly into camera-placement guidance for urban
+infrastructure. Discriminative architectures (U-Net, U-Net Conditional, Restormer) consistently
+outperform generative alternatives (GAN-Pix2Pix, Diffusion-SR3) in coverage, consistency, and
+reliability; the latter's hallucinations under low signal are a material liability for any
+identity-recognition application. PSNR tracks OCR accuracy closely enough ($R^2 \geq 0.979$) to
+serve as a training-time surrogate, which materially simplifies the model-selection loop by
+making OCR-in-the-loop validation unnecessary.
 </p>
 <p>
-The absolute numbers belong to the benchmark; their transfer to real sensor portfolios requires
-validation on real captures. The structural findings, the shape of the recoverable region, the
-$\alpha/\beta$ asymmetry, and the relative ordering of architectures, together with the
-framework's applicability to other opportunistic-sensing tasks such as face recognition under
-occlusion or scene-text reading under glare (Section&nbsp;6.2), are the transferable
-contribution of this work.
+In short: within the benchmark, most oblique viewing angles yield recoverable plates, a small
+double-extreme corner of the angle grid does not, and these findings, together with the framework
+itself, transfer to a broader class of opportunistic-sensing problems. The absolute numbers
+belong to the benchmark and require validation on real captures; the structural findings and the
+framework are the transferable contribution. Future work should validate the LPR boundary on a
+public oblique-capture dataset (for example RodoSol-ALPR or UFPR-ALPR), instantiate the framework
+on the candidate tasks sketched in Section&nbsp;6.2 (face recognition under occlusion, scene-text
+reading under glare, gait recognition from non-frontal CCTV), and report multi-seed statistics
+for the interior-consistency metric $F$ to establish confidence intervals on the architecture
+ordering.
 </p>
 
 <h2 class="sec">Author Contributions</h2>
