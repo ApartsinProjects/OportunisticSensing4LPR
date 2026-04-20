@@ -1223,47 +1223,13 @@ digits are distorted. SSIM should not be used as the primary validation metric f
 <!-- ===== 6. DISCUSSION ===== -->
 <h2 class="sec">6. Discussion</h2>
 
-<h3 class="subsec">6.1. Implications for Smart City Sensor Deployment</h3>
+<h3 class="subsec">6.1. Interpretation of the Observed Patterns</h3>
 <p>
-The 93.4% maximal recoverability boundary provides a quantitative planning guideline for urban
-infrastructure. If the worst-case viewing angle for a given fixed sensor installation is bounded
-by $\alpha < 80^\circ$ and $\beta < 80^\circ$, then a software restoration pipeline is capable of
-recovering legible plates without hardware modification; this envelope covers the majority of
-practical ATM camera, body-worn device, and streetlight camera geometries, whereas sensors placed
-with extreme lateral tilt and extreme elevation simultaneously fall outside it.
-</p>
-<p>
-The alpha-versus-beta asymmetry has a practical corollary for camera placement: lateral mounting
-height (which determines $\alpha$) is a more critical variable than horizontal offset (which
-determines $\beta$). A camera mounted very high on a pole (large elevation $\beta$) retains LPR
-capability across a wide range of vehicle distances because the plate remains partially visible;
-a camera angled steeply to the side (large azimuth $\alpha$) loses digit separability earlier.
-Urban planners seeking to enable opportunistic LPR from pole-mounted sensors should prioritise
-constraining the azimuthal angle over the elevational angle in sensor placement guidelines.
-</p>
-
-<h3 class="subsec">6.2. Beyond LPR: Other Instances of the Framework</h3>
-<p>
-The recoverability-map framework introduced in Section&nbsp;3 is deliberately task-agnostic, and
-the methodology demonstrated here on oblique-view LPR transfers to several other
-opportunistic-sensing problems of interest to the urban-systems community. Face recognition from
-pole-mounted or body-worn cameras under controlled pose and occlusion parameters fits the
-framework directly: the parameter space becomes (yaw, occlusion fraction) and the utility is a
-thresholded face-identification score. Scene-text reading from dashcam imagery under glare and
-motion-blur parameters is another natural instantiation. Gait recognition from non-frontal CCTV,
-where the parameter space is camera viewpoint and walking-direction offset, is a third. In each
-case the same two summary measures, boundary-AUC and the reliability score $F$, would yield a
-comparable quantitative deployment guideline. We leave these instantiations as future work and
-present LPR here as a concrete first demonstration that the framework produces actionable
-numbers.
-</p>
-
-<h3 class="subsec">6.3. Why the Observed Patterns Emerge</h3>
-<p>
-Three empirical patterns in the results follow from the structure of the problem rather than
-from implementation details: lateral rotations are harder to reconstruct than elevational
+Three empirical patterns in the results are properties of the problem structure rather than of
+implementation details: lateral rotations are consistently harder to reconstruct than elevational
 rotations, discriminative models outperform generative alternatives, and Diffusion-SR3 is most
-unstable at extreme angles.
+unstable at extreme angles. A fourth finding concerns the influence of the training-angle
+distribution on interior consistency rather than on coverage.
 </p>
 <p>
 The $\alpha/\beta$ asymmetry reflects the information geometry of the plate itself. A license
@@ -1282,86 +1248,101 @@ samples and an L1 + SSIM objective, which is a direct regression of the distorti
 map that the networks must invert at inference time. GAN adversarial losses and diffusion
 denoising objectives instead prioritise perceptual plausibility, a criterion that competes with
 character fidelity: a plausible plate need not be the correct plate. Restormer and the U-Net
-variants therefore cluster near the top of Table&nbsp;4 on both AUC and $F$.
+variants therefore cluster near the top of Table&nbsp;4 on both AUC and $F$. Diffusion-SR3's
+instability at extreme angles follows from the same tradeoff: when the conditional input carries
+low signal-to-noise the denoising network is free to sample any digit string consistent with the
+remaining evidence, producing plausible but incorrect plates. The reliability score $F$ captures
+this directly, rising to $1.124$ on DS-E, an order of magnitude worse than any discriminative
+model.
 </p>
 <p>
-Diffusion-SR3's instability at extreme angles is a consequence of the same tradeoff. At high
-$\alpha$ or $\beta$, the conditional input carries low signal-to-noise, and the denoising network
-is free to sample any digit string consistent with the remaining evidence, producing plausible
-but incorrect plates. The reliability score $F$ captures this directly: Diffusion-SR3 reaches
-$F = 1.124$ on DS-E, an order of magnitude worse than any discriminative model, with interior
-failures scattered far into the otherwise-recoverable region.
-</p>
-
-<h3 class="subsec">6.4. Architecture Choice for Urban Deployment</h3>
-<p>
-For practical urban deployment, discriminative models are the clear choice. They are easier to
-validate through explicit loss functions, more stable to train, and their PSNR improvements
-translate directly to OCR gains (Eqs.&nbsp;10&ndash;11). Generative models lack clear quantitative
-validation signals: GAN training can collapse, and diffusion models require running the full sampling
-chain for each validation image, making checkpoint selection slow.
-</p>
-<p>
-Critically for a law enforcement application, the hallucination behaviour of Diffusion-SR3 under
-low signal is a serious liability. When the conditional input is too distorted to carry digit
-information, the diffusion model generates a visually clean plate with plausible but incorrect
-digits, producing a confident false reading. Discriminative models, by contrast, produce blurred
-or ambiguous outputs under the same conditions, which a downstream confidence filter can more
-easily reject.
-</p>
-<p>
-U-Net Conditional offers the best operational tradeoff: accuracy within 2% of Restormer, 1.19x the
-training cost of the baseline U-Net, and the lowest inference latency (7.50 ms) of any model tested.
-At this latency, real-time processing of $> 100$ frames per second is feasible on a single GPU,
-sufficient for continuous fixed-sensor LPR streams.
+The training distribution shapes interior consistency rather than coverage. Boundary-AUC is
+nearly identical across the Standard and Extreme datasets ($\Delta &lt; 0.002$ for the
+discriminative models), indicating that the extent of the recoverable region is bounded by the
+physics of foreshortening rather than by the training-angle PDF. The angle PDF does, however,
+shape $F$: the Extreme dataset destabilises Diffusion-SR3 ($F$ rises from $0.57$ to $1.12$) and
+produces small shifts in interior behaviour for the other models. This is the classical
+bias-variance tradeoff of data distribution design and implies that practitioners building
+real-data pipelines should prioritise angular diversity and corner coverage over raw sample
+count.
 </p>
 
-<h3 class="subsec">6.5. Training Distribution Shape Matters</h3>
+<h3 class="subsec">6.2. Beyond LPR: Other Instances of the Framework</h3>
 <p>
-Boundary-AUC is nearly identical across the Standard and Extreme datasets ($\Delta < 0.002$ for
-discriminative models), indicating that the recoverable region is bounded by the physics of
-foreshortening rather than by training distribution. However, the choice of angle PDF shapes
-<em>interior consistency</em>: the Extreme dataset, with stronger emphasis on oblique angles,
-produces models that are slightly more reliable near the boundary but slightly less so in the
-easy interior, and substantially destabilises Diffusion-SR3 ($F$ rises from 0.57 to 1.12). This
-reflects the classic bias-variance tradeoff in data distribution design.
-</p>
-<p>
-This finding has a direct implication for practitioners building real-data pipelines: once the
-angle space is covered, shaping the training distribution (how many samples fall in the extreme
-corner) influences interior consistency much more than raw sample count. Practitioners should
-therefore invest effort in angular <em>diversity and corner coverage</em> rather than in simply
-collecting more samples in the easy regime.
+The recoverability-map framework introduced in Section&nbsp;3 is deliberately task-agnostic, and
+the methodology demonstrated here on oblique-view LPR transfers to several other
+opportunistic-sensing problems of interest to the urban-systems community. Face recognition from
+pole-mounted or body-worn cameras under controlled pose and occlusion parameters fits the
+framework directly: the parameter space becomes (yaw, occlusion fraction) and the utility is a
+thresholded face-identification score. Scene-text reading from dashcam imagery under glare and
+motion-blur parameters is another natural instantiation. Gait recognition from non-frontal CCTV,
+where the parameter space is camera viewpoint and walking-direction offset, is a third. In each
+case the same two summary measures, boundary-AUC and the reliability score $F$, would yield a
+comparable quantitative deployment guideline. We leave these instantiations as future work and
+present LPR here as a concrete first demonstration that the framework produces actionable
+numbers.
 </p>
 
-<h3 class="subsec">6.6. Practical Implications for Urban Sensor Portfolios</h3>
+<h3 class="subsec">6.3. Implications for Smart City Deployment</h3>
 <p>
-The recoverability map translates into concrete, actionable guidelines for city planners,
+The 93.4% maximal recoverability boundary provides a quantitative planning guideline for urban
+infrastructure. If the worst-case viewing angle for a fixed sensor installation is bounded by
+$\alpha &lt; 80^\circ$ and $\beta &lt; 80^\circ$, then a software restoration pipeline is capable
+of recovering legible plates without hardware modification; this envelope covers the majority of
+practical ATM-camera, body-worn-device, and streetlight-camera geometries, whereas sensors placed
+with extreme lateral tilt and extreme elevation simultaneously fall outside it.
+</p>
+<p>
+Among the evaluated architectures, discriminative models are the clear operational choice: they
+are easier to validate through explicit loss functions, more stable to train, and their PSNR
+improvements translate directly to OCR gains (Eqs.&nbsp;10&ndash;11). The hallucination behaviour
+of Diffusion-SR3 under low signal is a serious liability in any identity-recognition setting,
+since the model produces a visually clean plate with plausible but incorrect digits, a confident
+false reading that a downstream confidence filter cannot distinguish from a correct one.
+Discriminative models, by contrast, produce blurred or ambiguous outputs under the same
+conditions, which such filters can reject. Among discriminative models, U-Net Conditional offers
+the best operational tradeoff: accuracy within 2% of Restormer, only 1.19x the training cost of
+the U-Net baseline, and the lowest inference latency (7.50&nbsp;ms) of any model tested, which is
+compatible with real-time processing of continuous fixed-sensor streams at over 100 frames per
+second on a single GPU.
+</p>
+<p>
+The $\alpha/\beta$ asymmetry gives a practical corollary for camera placement: lateral mounting
+angle (which determines $\alpha$) is a more critical variable than vertical elevation (which
+determines $\beta$). A camera mounted very high on a pole retains LPR capability across a wide
+range of vehicle distances because the plate remains partially visible; a camera angled steeply
+to the side loses digit separability earlier. Urban planners seeking to enable opportunistic LPR
+from pole-mounted sensors should prioritise constraining the azimuthal angle over the elevational
+angle in sensor placement guidelines.
+</p>
+<p>
+Collecting these observations gives four concrete guidelines for city planners,
 camera-portfolio owners, and forensic analysts:
 </p>
 <ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.55;">
  <li><strong>Sensor viability.</strong> ATM cameras, body-worn cameras, and pole-mounted CCTV
- typically produce captures in the interior of the recoverable region ($\alpha, \beta < 70^\circ$)
- and are therefore candidate opportunistic LPR sources without hardware change, provided the
- sensor resolution resolves digit strokes at the typical vehicle distance. Dashcams and
- handheld smartphones, which move relative to traffic, have broader and less predictable angle
- distributions, they benefit most from conditional (angle-aware) restoration.</li>
+ typically produce captures in the interior of the recoverable region
+ ($\alpha, \beta &lt; 70^\circ$) and are therefore candidate opportunistic LPR sources without
+ hardware change, provided the sensor resolution resolves digit strokes at the typical vehicle
+ distance. Dashcams and handheld smartphones, which move relative to traffic, have broader and
+ less predictable angle distributions and benefit most from conditional (angle-aware)
+ restoration.</li>
  <li><strong>Camera placement.</strong> When siting a new fixed sensor whose secondary use
  includes LPR, the $\alpha/\beta$ asymmetry implies that <em>elevational</em> tilt (camera
  mounted higher) costs less recoverable coverage than <em>lateral</em> tilt (camera placed
  off the traffic axis). A $60^\circ$ elevation is tolerable; a $60^\circ$ lateral tilt is
  marginal.</li>
  <li><strong>Forensic triage.</strong> For retrospective case work on archived footage, the
- recoverability map enables a fast pre-screen: captures whose estimated $(\alpha, \beta)$ fall
- in the upper-right corner $(\alpha, \beta > 80^\circ)$ can be flagged as unrecoverable by any
- current method, saving analyst time.</li>
+ recoverability map supports fast pre-screening: captures whose estimated $(\alpha, \beta)$
+ fall in the upper-right corner ($\alpha, \beta &gt; 80^\circ$) can be flagged as unrecoverable
+ by any current method, saving analyst time.</li>
  <li><strong>Expected-gain estimation.</strong> Given a sensor portfolio with known geometry
- distribution, one can overlay that distribution on the recoverability map to estimate the
- <em>expected</em> fraction of captured vehicles that the restoration pipeline will render
+ distribution, overlaying that distribution on the recoverability map gives the
+ <em>expected</em> fraction of captured vehicles that a restoration pipeline will render
  readable, a quantity directly useful for ROI and procurement decisions.</li>
 </ul>
 
-<h3 class="subsec">6.7. Limitations</h3>
+<h3 class="subsec">6.4. Limitations</h3>
 <p>
 The study has several bounded scope conditions that should be read alongside the headline results.
 The benchmark is fully synthetic: clean plates are rendered in a single standard vehicle-plate
@@ -1495,7 +1476,7 @@ The authors declare no conflict of interest.
  <span class="rnum">[4]</span>
  Ho, J., Jain, A., &amp; Abbeel, P. (2020). Denoising diffusion probabilistic models.
  <em>Advances in Neural Information Processing Systems</em>, <em>33</em>, 6840&ndash;6851.
- <a href="https://doi.org/10.5555/3495724.3496298">https://doi.org/10.5555/3495724.3496298</a>
+ <a href="https://arxiv.org/abs/2006.11239">https://arxiv.org/abs/2006.11239</a>
  </li>
  <li id="r5">
  <span class="rnum">[5]</span>
