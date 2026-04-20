@@ -357,27 +357,25 @@ hr.sec-rule {
  vehicle identification, including automated teller machine cameras, body-worn devices, dashboard
  cameras, pole-mounted CCTV, and smartphones. We term the use of such non-purpose-built sensors
  for secondary inference <em>opportunistic sensing</em>; its central open question is where in
- the space of uncontrolled capture conditions AI-enabled restoration reliably works and where it
- fails. This paper introduces <em>recoverability maps</em>, a task-agnostic methodology for
- quantifying that boundary, and applies it to oblique-view license plate recognition (LPR) as a
- concrete showcase. The methodology comprises a full-grid synthetic sweep of the degradation
- parameter space together with two summary measures: a boundary area-under-curve that quantifies
- the fraction of parameter space where inference succeeds, and a reliability score $F$ that
- measures the frequency and depth of interior failures. For the LPR showcase the parameter space
- is the oblique-angle grid $[0^\circ, 89^\circ]^2$ sampled by Scrambled Sobol sequences, the
- degradation combines homographic projection with realistic camera artifacts, and the downstream
- utility is plate-level optical character recognition accuracy. Five architectures are trained
+ the space of uncontrolled capture conditions AI-enabled restoration remains reliable. This paper
+ introduces <em>recoverability maps</em>, a task-agnostic methodology for quantifying that
+ boundary, and applies it to oblique-view license plate recognition (LPR) as a concrete showcase.
+ The methodology combines a full-grid synthetic sweep of the degradation parameter space with two
+ summary measures: a boundary area-under-curve that quantifies the fraction of parameter space
+ where inference succeeds, and a reliability score $F$ that measures the frequency and depth of
+ interior failures. For the LPR showcase the parameter space is the oblique-angle grid
+ $[0^\circ, 89^\circ]^2$ sampled by Scrambled Sobol sequences, the degradation combines
+ homographic projection with realistic camera artifacts, and the downstream utility is
+ plate-level optical character recognition accuracy. Five restoration architectures are trained
  and evaluated on the shared grid: U-Net, an angle-conditioned U-Net, Restormer, Pix2Pix, and an
  SR3 diffusion model. Approximately $93.4\%$ of the angle grid is recoverable by the best
- model evaluated, recovery degrades sharply beyond roughly $80^\circ$ in both axes
+ evaluated model; recovery degrades sharply beyond roughly $80^\circ$ in both axes
  simultaneously, and lateral rotations are consistently harder to reconstruct than elevational
  ones. Discriminative architectures outperform generative models on coverage, training
- efficiency, and interior consistency. PSNR tracks OCR accuracy closely ($R^2 = 0.99$) and is
- suitable as a training-time surrogate, whereas SSIM exhibits a threshold-like response
- ($R^2 \approx 0.74$) and is unsuitable for checkpoint selection. All five models cluster within
- a narrow AUC band of $0.89$–$0.92$ and share the same $\alpha/\beta$ asymmetry, indicating that
- the shape of the recoverable region is determined primarily by sensing geometry rather than by
- the choice of architecture.
+ efficiency, and interior consistency. All five models cluster within a narrow AUC band of
+ $0.89$–$0.92$ and share the same $\alpha/\beta$ asymmetry, indicating that the shape of the
+ recoverable region is determined primarily by sensing geometry rather than by the choice of
+ architecture.
  </p>
  </div>
 
@@ -398,87 +396,60 @@ hr.sec-rule {
 <h2 class="sec">1. Introduction</h2>
 
 <p>
-Smart cities are instrumented with a dense, heterogeneous fabric of sensors collecting continuous
-streams of urban data, including traffic-flow detectors, environmental and air-quality monitors,
-acoustic sensors, occupancy counters, and imaging devices. Among these, imaging sensors are the
-most information-dense: fixed and mobile cameras are installed for purposes spanning public
-safety, retail security, ATM fraud prevention, dashcam recording, and traffic management, with
-global deployments of surveillance cameras alone now exceeding one billion units
-<cite>(<a href="#r13">Kitchin, 2014</a>)</cite>. The majority of these cameras are fixed in position
-and oriented without any consideration of secondary inference tasks such as license plate
-readability. When a vehicle of interest passes within range of any such sensor, the captured
-image may represent the only available record; however, because the camera was positioned for an
-unrelated task, the plate can appear at steep oblique angles, foreshortened, blurred, and
-compressed, conditions that cause standard LPR pipelines to fail.
+Urban infrastructure routinely accumulates data from sensors installed for one purpose that can
+be reused for another at near-zero marginal cost. Smartphone accelerometers, originally built for
+screen-orientation and step counting, have been used to map road-surface defects from ordinary
+driving <cite>(<a href="#r28">Eriksson et al., 2008</a>)</cite>. Smart-meter electricity readings,
+installed for billing, carry enough detail to infer appliance-level activity patterns. Ambient
+microphones on mobile devices, deployed for voice assistants, can estimate traffic density and
+crowd activity <cite>(<a href="#r26">Lane et al., 2010</a>)</cite>. Parking-sensor magnetometers
+and pedestrian-counter beam-breakers similarly admit secondary interpretations beyond their
+design specification. This pattern, which Campbell et al.
+<cite>(<a href="#r9">2008</a>)</cite> and Ganti et al.
+<cite>(<a href="#r10">2011</a>)</cite> termed <em>opportunistic sensing</em>, has the same
+underlying structure in every case: a sensor deployed for purpose A produces a signal rich enough
+to support a secondary inference B, provided B's signal survives the sensor's original acquisition
+constraints. The practical question is rarely whether opportunistic reuse is possible in
+principle, but where in the space of uncontrolled acquisition conditions the secondary inference
+remains reliable.
 </p>
 <p>
-We frame this as an instance of <em>opportunistic sensing</em>: the extraction of information from
-a sensor not designed or positioned for that specific task
-<cite>(<a href="#r9">Campbell et al., 2008</a>; <a href="#r10">Ganti et al., 2011</a>)</cite>.
-Opportunistic sensing has been explored extensively in mobile computing (using smartphone
-accelerometers for activity recognition, ambient audio for place identification) and in IoT
-contexts (repurposing utility meters and parking sensors for secondary analytics). Its application
-to fixed camera infrastructure for vehicle identity extraction, however, remains largely
-uncharacterized in the urban systems literature. To our knowledge, no prior work has
-posed the question from an urban planning perspective: <em>given a sensor that cannot be
-repositioned, at what angles does enough signal survive to recover a license plate
-automatically?</em>
+Imaging sensors are the most information-dense instance of this pattern. Smart cities host over
+one billion surveillance cameras <cite>(<a href="#r13">Kitchin, 2014</a>)</cite>, together with
+an order of magnitude more mobile cameras on vehicles and handheld devices, almost none
+calibrated for any specific downstream inference. When a vehicle of interest passes within range
+of one of these cameras, the captured image can be the only available record. Because the sensor
+was positioned for an unrelated task, however, the plate typically appears at oblique angles,
+foreshortened, blurred, and compressed, conditions that cause standard license plate recognition
+(LPR) pipelines to fail. Modern deep-learning image restoration plausibly recovers such plates,
+but the angular extent of this recovery has not been mapped. This paper asks: given a camera
+that cannot be repositioned, at what viewing angles does enough signal survive for automatic
+LPR to succeed?
 </p>
 
 <p>
-The technical challenge is well motivated by the geometry of urban sensor deployments. ATM cameras
-are mounted at face level and typically capture vehicles from the side. Body-worn cameras record
-scenes from waist height at unpredictable orientations. Pole-mounted streetlight cameras look down
-at steep elevation angles. In all these cases, the license plate appears in the image at a
-combination of azimuthal rotation $\alpha$ and elevational rotation $\beta$ that can easily exceed
-$60^\circ$ in both axes. Existing LPR research assumes near-frontal capture (typically
-$|\alpha|, |\beta| \leq 30^\circ$) and degrades rapidly beyond this range
+Existing LPR research assumes near-frontal capture, typically $|\alpha|, |\beta| \leq 30^\circ$,
+and degrades rapidly beyond this range
 <cite>(<a href="#r7">Shashirangana et al., 2021</a>; <a href="#r8">Anagnostopoulos et al., 2008</a>)</cite>.
-Deep learning image restoration offers a potential route to recover readable plates from these
-distorted inputs, but the angular extent of this recovery has not been mapped.
-</p>
-
-<p>
-This paper provides that map. We construct a synthetic benchmark that samples the full
-$[0^\circ, 89^\circ]^2$ angle space using low-discrepancy Sobol sequences, distorts clean
-plate images with geometric warping and realistic camera artifact simulation, and trains five
-representative deep-learning architectures on the resulting pairs. We then evaluate all models on
-a shared full-angle grid and introduce two complementary metrics adapted from the recoverability
-literature: the <em>boundary-AUC</em>, which quantifies the fraction of the angle space where at
-least 90% of plates are recognized, and the <em>reliability score $F$</em>, which measures how
-consistently this boundary holds against interior failures. Together these metrics reduce a
-$90 \times 90$ performance matrix to two interpretable numbers.
+In opportunistic captures, by contrast, the plate routinely appears at $\alpha, \beta > 60^\circ$.
+The angular extent within which modern deep-learning image restoration can still recover a
+readable plate has not been mapped.
 </p>
 <p>
-The central contribution of this paper is a <em>recoverability map</em> for license plate
-recognition under uncontrolled viewing geometry: a quantitative boundary characterising the
-angular range within which urban imaging sensors can reliably supply readable plates, together
-with evidence that the shape of this map is primarily a property of the sensing geometry rather
-than of the specific restoration architecture used. Concretely, the paper makes three
-contributions. First, it reports a systematic comparison of five deep-learning restoration
-architectures on a shared oblique-angle benchmark, including training efficiency and inference
-latency relevant to real-time deployment. Second, it adapts two complementary measures from the
-classical recoverability literature, a boundary area-under-curve (boundary-AUC) and a reliability
-score $F$, to compactly characterise angular performance along both coverage and interior
-consistency. Third, it presents an empirical recoverability map for the constructed benchmark:
-approximately $93.4\%$ of the angle grid is recoverable by the best evaluated model, breakdown
-occurs beyond roughly $80^\circ$ in both axes simultaneously, lateral rotations are consistently
-harder than elevational ones, and PSNR tracks OCR accuracy closely enough ($R^2 = 0.99$) to serve
-as a training-time surrogate.
-</p>
-
-<p>
-<strong>LPR as a demonstrator.</strong> We select oblique-view LPR as the showcase because its
-three ingredients are unusually well-defined: (i) the degradation admits a closed-form
-parameterisation (two angles, $\alpha$ and $\beta$); (ii) the downstream utility is binary and
-directly measurable (does an OCR engine read the plate?); and (iii) the boundary between
-"recoverable" and "physically unrecoverable" lies inside the parameter space rather than at
-infinity. The methodology and metrics are, however, task-agnostic. Analogous instantiations
-apply directly to face recognition under controlled occlusion or pose, scene-text reading under
-glare and motion blur, and gait recognition from non-frontal cameras. We restrict ourselves to
-LPR in this paper and leave these extensions to future work. The central contribution is the
-framework; the LPR numbers are the first concrete point of evidence that recoverability maps
-yield actionable guidance for opportunistic-sensing deployments.
+<strong>Contributions.</strong> The primary contribution of this paper is methodological: we
+introduce <em>recoverability maps</em>, a task-agnostic framework for quantifying where in a
+parameterised degradation space an opportunistic sensing task remains reliable, together with two
+summary measures (a boundary area-under-curve and a reliability score $F$) that are adapted from
+classical operating-characteristic and envelope analyses
+<cite>(<a href="#r36">Martin et al., 1997</a>)</cite>
+to the two-dimensional setting. The framework is demonstrated on oblique-view LPR, yielding a
+systematic empirical comparison of five deep-learning restoration architectures (U-Net,
+angle-conditioned U-Net, Restormer, Pix2Pix, SR3 diffusion) on a shared $[0^\circ, 89^\circ]^2$
+grid. Under the conditions of the LPR benchmark, approximately $93.4\%$ of the angle grid is
+recoverable by the best evaluated model, breakdown occurs beyond roughly $80^\circ$ in both axes
+simultaneously, lateral rotations are consistently harder than elevational ones, and PSNR tracks
+OCR accuracy closely enough ($R^2 = 0.99$) to serve as a training-time surrogate. The instances
+of the framework beyond LPR are sketched in Section&nbsp;6.
 </p>
 
 <!-- CONCEPT FIGURE -->
@@ -518,15 +489,10 @@ broader data-driven city management paradigm
 <cite>(<a href="#r12">Batty, 2013</a>; <a href="#r13">Kitchin, 2014</a>)</cite>.
 </p>
 <p>
-The growing diversity of camera platforms in urban environments substantially widens the scope of
-opportunistic sensing beyond fixed infrastructure. Dashboard cameras now equip tens of millions of
-vehicles worldwide, logging continuous footage at varied angles relative to surrounding traffic.
-Body-worn cameras carried by law enforcement, security personnel, and emergency responders capture
-uncontrolled street-level views during incidents of interest. ATM machines mount cameras at
-face-to-environment height, providing incidental vehicle capture with no positional control.
-Eriksson et al. <cite>(<a href="#r28">2008</a>)</cite> showed that vehicle-mounted sensors can
-collect rich urban data opportunistically without dedicated sensing missions; the same principle
-applies to these imaging platforms for vehicle identity extraction.
+The diversity of camera platforms in urban environments substantially widens the scope of
+opportunistic sensing beyond fixed infrastructure, following the broader pattern established by
+Eriksson et al. <cite>(<a href="#r28">2008</a>)</cite> for vehicle-mounted sensing without
+dedicated sensing missions.
 </p>
 <p>
 Urban computing <cite>(<a href="#r24">Zheng et al., 2014</a>)</cite> and smart city frameworks
@@ -578,6 +544,17 @@ studies: rather than
 proposing another restoration architecture, we map <em>where in the angle space</em> restoration
 remains viable at all, treating recoverability as a measurable property of the sensing geometry.
 </p>
+<p>
+Evaluation of recognition under degradation has a long history in related domains. PSNR and SSIM
+<cite>(<a href="#r18">Wang et al., 2004</a>)</cite> are the standard image-quality proxies, but
+their correlation with downstream task performance is contested: for OCR and face recognition,
+PSNR is a more reliable predictor than SSIM
+<cite>(<a href="#r15">Chen et al., 2024</a>)</cite>. This relationship has not been established
+for LPR under oblique-angle distortion. Prior recoverability analyses in audio and face
+recognition use threshold curves and operating-characteristic measures over a degradation
+parameter, but no such framework has been applied to the two-dimensional $(\alpha, \beta)$ space
+of camera viewing angles; the present work provides such a characterisation.
+</p>
 
 <h3 class="subsec">2.3. Deep Learning Image Restoration</h3>
 <p>
@@ -615,21 +592,6 @@ discrepancy of an $N$-point Sobol set grows as $O((\log N)^d / N)$ compared to $
 for random sampling in dimension $d$. Applying Sobol sequences to the angle space ensures that the
 training dataset covers extreme and moderate angles uniformly, which is essential for learning a
 restoration model that generalizes across the full deployment range of a fixed urban sensor.
-</p>
-
-<h3 class="subsec">2.5. Evaluation of Recognition Under Degradation</h3>
-<p>
-PSNR and SSIM are the standard quality proxies in image restoration. SSIM was introduced by
-Wang et al. <cite>(<a href="#r18">2004</a>)</cite> as a perceptually-motivated complement to PSNR,
-comparing images in terms of luminance, contrast, and structural similarity. Despite its widespread
-adoption, the correlation of both metrics with downstream task performance is contested: for OCR
-and face recognition, PSNR is generally a more reliable predictor than SSIM
-<cite>(<a href="#r15">Chen et al., 2024</a>)</cite>. This relationship has not been established
-for license plate recognition under oblique-angle distortion. Prior recoverability analyses in other
-domains (e.g., audio under noise, face recognition under blur) use threshold curves and AUC-type
-measures over the degradation parameter space, but no such framework has been applied to the
-two-dimensional $(\alpha, \beta)$ space of camera viewing angles. Our empirical results provide
-such a characterisation for oblique LPR, together with concrete guidance on SSIM's threshold-like behaviour.
 </p>
 
 <!-- ===== 3. PROBLEM FORMULATION ===== -->
@@ -1280,7 +1242,23 @@ Urban planners seeking to enable opportunistic LPR from pole-mounted sensors sho
 constraining the azimuthal angle over the elevational angle in sensor placement guidelines.
 </p>
 
-<h3 class="subsec">6.2. Why the Observed Patterns Emerge</h3>
+<h3 class="subsec">6.2. Beyond LPR: Other Instances of the Framework</h3>
+<p>
+The recoverability-map framework introduced in Section&nbsp;3 is deliberately task-agnostic, and
+the methodology demonstrated here on oblique-view LPR transfers to several other
+opportunistic-sensing problems of interest to the urban-systems community. Face recognition from
+pole-mounted or body-worn cameras under controlled pose and occlusion parameters fits the
+framework directly: the parameter space becomes (yaw, occlusion fraction) and the utility is a
+thresholded face-identification score. Scene-text reading from dashcam imagery under glare and
+motion-blur parameters is another natural instantiation. Gait recognition from non-frontal CCTV,
+where the parameter space is camera viewpoint and walking-direction offset, is a third. In each
+case the same two summary measures, boundary-AUC and the reliability score $F$, would yield a
+comparable quantitative deployment guideline. We leave these instantiations as future work and
+present LPR here as a concrete first demonstration that the framework produces actionable
+numbers.
+</p>
+
+<h3 class="subsec">6.3. Why the Observed Patterns Emerge</h3>
 <p>
 Three empirical patterns in the results follow from the structure of the problem rather than
 from implementation details: lateral rotations are harder to reconstruct than elevational
@@ -1315,7 +1293,7 @@ $F = 1.124$ on DS-E, an order of magnitude worse than any discriminative model, 
 failures scattered far into the otherwise-recoverable region.
 </p>
 
-<h3 class="subsec">6.3. Architecture Choice for Urban Deployment</h3>
+<h3 class="subsec">6.4. Architecture Choice for Urban Deployment</h3>
 <p>
 For practical urban deployment, discriminative models are the clear choice. They are easier to
 validate through explicit loss functions, more stable to train, and their PSNR improvements
@@ -1338,7 +1316,7 @@ At this latency, real-time processing of $> 100$ frames per second is feasible o
 sufficient for continuous fixed-sensor LPR streams.
 </p>
 
-<h3 class="subsec">6.4. Training Distribution Shape Matters</h3>
+<h3 class="subsec">6.5. Training Distribution Shape Matters</h3>
 <p>
 Boundary-AUC is nearly identical across the Standard and Extreme datasets ($\Delta < 0.002$ for
 discriminative models), indicating that the recoverable region is bounded by the physics of
@@ -1356,7 +1334,7 @@ therefore invest effort in angular <em>diversity and corner coverage</em> rather
 collecting more samples in the easy regime.
 </p>
 
-<h3 class="subsec">6.5. Practical Implications for Urban Sensor Portfolios</h3>
+<h3 class="subsec">6.6. Practical Implications for Urban Sensor Portfolios</h3>
 <p>
 The recoverability map translates into concrete, actionable guidelines for city planners,
 camera-portfolio owners, and forensic analysts:
@@ -1383,22 +1361,6 @@ camera-portfolio owners, and forensic analysts:
  readable, a quantity directly useful for ROI and procurement decisions.</li>
 </ul>
 
-<h3 class="subsec">6.6. Beyond LPR</h3>
-<p>
-The recoverability-map framework introduced in Section&nbsp;3 is deliberately task-agnostic, and
-the methodology demonstrated here on oblique-view LPR transfers to several other
-opportunistic-sensing problems of interest to the urban-systems community. Face recognition from
-pole-mounted or body-worn cameras under controlled pose and occlusion parameters fits the
-framework directly: the parameter space becomes (yaw, occlusion fraction) and the utility is a
-thresholded face-identification score. Scene-text reading from dashcam imagery under glare and
-motion-blur parameters is another natural instantiation. Gait recognition from non-frontal
-CCTV, where the parameter space is camera viewpoint and walking-direction offset, is a third.
-In each case the same two summary measures, boundary-AUC and the reliability score $F$, would
-yield a comparable quantitative deployment guideline. We leave these instantiations as future
-work and present LPR here as a concrete first demonstration that the framework produces
-actionable numbers.
-</p>
-
 <h3 class="subsec">6.7. Limitations</h3>
 <p>
 The study has several bounded scope conditions that should be read alongside the headline results.
@@ -1424,30 +1386,30 @@ the relative ranking of architectures is expected to remain stable.
 <h2 class="sec">7. Conclusion</h2>
 
 <p>
-This paper has characterised the recoverability limit for opportunistic license plate recognition
-from fixed urban sensors capturing vehicles at extreme oblique angles. Through a controlled
-synthetic benchmark spanning the full $[0^\circ, 89^\circ]^2$ angle space with Sobol-sampled
-training data and five representative deep-learning restoration architectures, we have established
-that approximately 93.4% of this angle space is recoverable at $\geq 90\%$ plate OCR accuracy.
-Beyond $\sim 80^\circ$ in both azimuthal and elevational rotation simultaneously, none of the
-architectures evaluated here can extract a reliable plate number; the residual signal energy is simply insufficient.
+This paper introduced <em>recoverability maps</em>, a task-agnostic framework for quantifying
+where in a parameterised degradation space an opportunistic-sensing task remains reliable, and
+demonstrated it on oblique-view license plate recognition. The framework builds on two summary
+measures adapted from classical operating-characteristic analysis: a boundary area-under-curve
+that captures coverage, and a reliability score $F$ that captures interior consistency.
 </p>
 <p>
+Under the LPR benchmark, approximately 93.4% of the $[0^\circ, 89^\circ]^2$ angle space is
+recoverable at $\geq 90\%$ plate OCR accuracy; beyond roughly $80^\circ$ in both axes
+simultaneously none of the evaluated architectures extracts a reliable plate number.
 Discriminative architectures (U-Net, U-Net Conditional, Restormer) consistently outperform
 generative alternatives (GAN-Pix2Pix, Diffusion-SR3) in coverage, consistency, and reliability.
-PSNR is a highly reliable training proxy for OCR accuracy ($R^2 \geq 0.979$), enabling efficient
-checkpoint selection without running OCR during training. The alpha-versus-beta asymmetry reveals
-that lateral azimuthal rotation is harder to correct than elevational rotation, informing camera
-placement guidelines for smart city deployments.
+PSNR is a reliable training proxy for OCR accuracy ($R^2 \geq 0.979$), enabling efficient
+checkpoint selection without running OCR during training. The $\alpha$-versus-$\beta$ asymmetry
+shows that lateral azimuthal rotation is harder to correct than elevational rotation, informing
+camera placement guidelines for smart city deployments.
 </p>
 <p>
-These results provide an initial quantitative answer to the urban systems question this work was
-motivated by: under the benchmark conditions studied, fixed sensors not designed for LPR may be
-opportunistically usable for vehicle identification across a substantial fraction of oblique
-viewing geometries using software restoration alone. The transferability of the specific 93.4%
-figure to real sensor portfolios requires validation on real captures; the structural findings,
-the shape of the recoverable region, the $\alpha/\beta$ asymmetry, and the relative ordering of
-architectures, are expected to carry over.
+The absolute numbers belong to the benchmark; their transfer to real sensor portfolios requires
+validation on real captures. The structural findings, the shape of the recoverable region, the
+$\alpha/\beta$ asymmetry, and the relative ordering of architectures, together with the
+framework's applicability to other opportunistic-sensing tasks such as face recognition under
+occlusion or scene-text reading under glare (Section&nbsp;6.2), are the transferable
+contribution of this work.
 </p>
 
 <h2 class="sec">Author Contributions</h2>
@@ -1478,17 +1440,22 @@ Not applicable.
 
 <h2 class="sec">Data Availability Statement</h2>
 <p>
-The synthetic datasets, evaluation grid, and pre-computed per-angle-pair evaluation results
-generated during this study will be made available by the corresponding author on reasonable
-request. The deterministic Sobol seeds and the exact distortion-pipeline parameters required to
-regenerate the datasets are documented in Section&nbsp;4.1.
+The synthetic datasets analysed in this study are not redistributed as static files. They are
+fully and deterministically reproducible from the public data-generation pipeline released with
+this paper (see <em>Code Availability</em>), together with the Sobol seeds and distortion-pipeline
+parameters documented in Section&nbsp;4.1 and Table&nbsp;1. Re-running the pipeline yields
+bit-identical training, validation, and test splits. Pre-computed per-angle-pair evaluation
+results used to produce the figures and tables in this paper are available from the corresponding
+author on request.
 </p>
 
 <h2 class="sec">Code Availability</h2>
 <p>
-Training and evaluation scripts for all five architectures, together with the figure-generation
-pipeline used to produce the results in this paper, will be released in a public repository upon
-acceptance.
+The dataset-generation pipeline (plate rendering, Sobol angle sampling, homographic distortion,
+and camera-artifact simulation), the training and evaluation scripts for all five architectures,
+and the figure-generation scripts used to produce the results in this paper will be released in a
+public GitHub repository upon acceptance. A DOI-minted snapshot of the release will be deposited
+on Zenodo.
 </p>
 
 <h2 class="sec">Conflicts of Interest</h2>
@@ -1736,6 +1703,13 @@ The authors declare no conflict of interest.
  View. In <em>Proceedings of the IEEE International Conference on Computer Vision
  (ICCV)</em> (pp. 2373&ndash;2380).
  <a href="https://doi.org/10.1109/ICCV.2009.5459413">https://doi.org/10.1109/ICCV.2009.5459413</a>
+ </li>
+ <li id="r36">
+ <span class="rnum">[36]</span>
+ Martin, A., Doddington, G., Kamm, T., Ordowski, M., &amp; Przybocki, M. (1997).
+ The DET curve in assessment of detection task performance. In
+ <em>Proceedings of Eurospeech 1997</em> (pp. 1895&ndash;1898).
+ <a href="https://doi.org/10.21437/Eurospeech.1997-504">https://doi.org/10.21437/Eurospeech.1997-504</a>
  </li>
  </ol>
 </div>
