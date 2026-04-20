@@ -42,22 +42,79 @@ N_COLS = len(CASES)
 # We crop out the small label at top of each row block to show only the plate.
 LABEL_FRAC = 0.32   # fraction of each row block that is the text label
 
+TARGET_ASPECT = 4.0   # canonical plate aspect (width / height), e.g. 256x64
+CANVAS_BG = (255, 255, 255)  # white padding around each plate
+
+def _center_pad_to_aspect(arr, target_aspect=TARGET_ASPECT, bg=CANVAS_BG):
+    """Pad a plate image with a neutral background so its (w / h) ratio
+    equals target_aspect, without resampling. Result is the image centered
+    inside a larger canvas; cropping never occurs."""
+    h, w = arr.shape[:2]
+    current_aspect = w / max(h, 1)
+    if current_aspect < target_aspect:
+        # Image too tall relative to target: add left/right padding.
+        new_w = int(round(h * target_aspect))
+        pad = (new_w - w) // 2
+        canvas = np.full((h, new_w, 3), bg, dtype=arr.dtype)
+        canvas[:, pad:pad + w] = arr
+        return canvas
+    else:
+        # Image too wide: add top/bottom padding.
+        new_h = int(round(w / target_aspect))
+        pad = (new_h - h) // 2
+        canvas = np.full((new_h, w, 3), bg, dtype=arr.dtype)
+        canvas[pad:pad + h, :] = arr
+        return canvas
+
+
+def _tight_crop_plate(row_block):
+    """
+    Shrink a row block to the tightest bounding box containing the plate
+    content (non-white, non-near-black pixels). This removes the text label
+    at the top, any padding around the plate, and any bleed from the next
+    row, producing a consistent crop across all source images.
+    """
+    h, w, _ = row_block.shape
+    # Consider a pixel "content" if it is neither near-white (background,
+    # label area) nor pure padding. White threshold: min RGB > 240.
+    gray = row_block.mean(axis=2)
+    is_bg = gray > 240
+    content = ~is_bg
+    # Row/col activity counts
+    row_activity = content.sum(axis=1)
+    col_activity = content.sum(axis=0)
+    # Find row range with enough content (at least 5% of width)
+    row_thr = max(1, int(0.05 * w))
+    rows = np.where(row_activity > row_thr)[0]
+    col_thr = max(1, int(0.02 * h))
+    cols = np.where(col_activity > col_thr)[0]
+    if rows.size == 0 or cols.size == 0:
+        # Fall back to the central 60% vertically
+        return row_block[int(0.2 * h): int(0.9 * h), :]
+    # Exclude the top text-label band: discard the first contiguous cluster
+    # of rows if it is short (a text label typically < 20% of row_h).
+    # Simple approach: take the tallest contiguous cluster.
+    groups = np.split(rows, np.where(np.diff(rows) > 2)[0] + 1)
+    best_group = max(groups, key=len)
+    r0, r1 = best_group[0], best_group[-1]
+    c0, c1 = cols[0], cols[-1]
+    return row_block[r0:r1 + 1, c0:c1 + 1]
+
+
 def load_strip_plates(img_path):
     img = Image.open(img_path).convert("RGB")
-    w, h = img.size
     arr = np.array(img)
-    # Skip the overall header (~8% of image)
+    h = arr.shape[0]
     header_px = int(h * 0.08)
     body = arr[header_px:, :]
     row_h = body.shape[0] // N_ROWS
     plates = []
     for i in range(N_ROWS):
         row_block = body[i * row_h: (i + 1) * row_h, :]
-        # Skip the embedded label at top and trim bottom so the next row's
-        # label does not bleed in.
-        top_px = int(row_h * LABEL_FRAC)
-        bottom_px = int(row_h * 0.98)
-        plate = row_block[top_px:bottom_px, :]
+        plate = _tight_crop_plate(row_block)
+        # Canonicalise aspect so every plate renders centered in its frame
+        # at the same scale, with no clipping.
+        plate = _center_pad_to_aspect(plate)
         plates.append(plate)
     return plates
 

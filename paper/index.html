@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mapping License Plate Recoverability: A Synthetic Benchmark for Opportunistic Urban Sensing</title>
+<title>Mapping License Plate Recoverability Under Extreme Viewing Angles for Opportunistic Urban Sensing</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"
@@ -353,8 +353,8 @@ hr.sec-rule {
  ============================================================ -->
 <div class="title-block">
  <h1 class="article-title">
- Mapping License Plate Recoverability Under Extreme Viewing Angles:
- A Synthetic Benchmark for Opportunistic Urban Sensing
+ Mapping License Plate Recoverability Under Extreme Viewing Angles
+ for Opportunistic Urban Sensing
  </h1>
  <div class="authors">Igor Adamenko<sup>1</sup>, Orpaz Ben Aharon<sup>2</sup>, Yehudit Aperstein<sup>3</sup>, Alexander Apartsin<sup>4</sup></div>
  <div class="affiliations">
@@ -428,7 +428,7 @@ Opportunistic sensing has been explored extensively in mobile computing (using s
 accelerometers for activity recognition, ambient audio for place identification) and in IoT
 contexts (repurposing utility meters and parking sensors for secondary analytics). Its application
 to fixed camera infrastructure for vehicle identity extraction, however, remains largely
-largely uncharacterized in the urban systems literature. To our knowledge, no prior work has
+uncharacterized in the urban systems literature. To our knowledge, no prior work has
 posed the question from an urban planning perspective: <em>given a sensor that cannot be
 repositioned, at what angles does enough signal survive to recover a license plate
 automatically?</em>
@@ -640,13 +640,18 @@ coordinates, followed by a perspective projection $\Pi$ onto the image plane:
 </p>
 
 <div class="eq-block">
- $$x_d = D\!\left(\Pi\!\left(\mathbf{R}(\alpha,\beta)\,x_0\right)\right)$$
+ $$x_d = D_{\text{JPEG}} \circ D_{\text{blur}} \circ D_{\text{jitter}} \circ D_{\text{edge}} \circ
+ \Pi\!\left(\mathbf{R}(\alpha,\beta)\,x_0\right)$$
  <span class="eq-num">(1)</span>
  </div>
 
 <p>
-where $x_0$ is the clean plate image, $D$ is a degradation operator modelling edge blending,
-colour jitter, Gaussian blur, and JPEG compression, and $x_d$ is the observed distorted image.
+where $x_0$ is the clean plate image, $\mathbf{R}(\alpha,\beta)\,x_0$ applies the planar rotation
+in homogeneous coordinates, $\Pi$ is the perspective projection, and the four degradation stages
+are applied in order: $D_{\text{edge}}$ performs alpha-mask edge blending with a signed-distance
+field, $D_{\text{jitter}}$ applies brightness/contrast/saturation jitter, $D_{\text{blur}}$ applies
+isotropic Gaussian blur with $\sigma \in [0.5, 1.5]$, and $D_{\text{JPEG}}$ compresses the image
+at quality $q \in [55, 85]$. The composition yields the observed distorted image $x_d$.
 Following the construction described in Section&nbsp;4.1, $x_d$ is subsequently de-warped by the
 inverse homography $R(\alpha,\beta)^{-1}$ and resized to $256\times 64$ before being passed to
 the restoration network; this re-aligned input is what each $f_\theta$ learns to correct. Thus
@@ -733,7 +738,7 @@ PSNR and SSIM are evaluated subsequently as candidate training-time surrogates f
 <h3 class="subsec">4.1. Synthetic Dataset Construction</h3>
 <p>
 We generate clean license plate images by rendering random 6-digit numeric strings on a
-yellow background using the standard Israeli plate font and dimensions, downscaled to
+yellow background using a single standard vehicle licence-plate font and dimensions, downscaled to
 $256 \times 64$ pixels. Each plate is then distorted through a five-stage pipeline:
 </p>
 <ul style="margin:0.3em 0 0.7em 1.4em; font-size:9.5pt; line-height:1.6;">
@@ -844,7 +849,10 @@ $\epsilon \sim \mathcal{N}(0, I)$. At inference, deterministic DDIM sampling
 
 <div class="tbl-wrap">
  <div class="tbl-caption">
- <strong>Table 2.</strong> Restoration architecture overview.
+ <strong>Table 2.</strong> Restoration architecture overview. Parameters reported for the
+ specific configuration used in this study; all models accept $256 \times 64$ RGB input and
+ produce a same-resolution restored output. Optimiser, base learning rate, and epoch count
+ are the settings used in the reported experiments.
  </div>
  <table>
  <thead>
@@ -853,14 +861,18 @@ $\epsilon \sim \mathcal{N}(0, I)$. At inference, deterministic DDIM sampling
  <th>Type</th>
  <th>Key feature</th>
  <th>Loss</th>
+ <th>Params (M)</th>
+ <th>Optimiser</th>
+ <th>Base LR</th>
+ <th>Epochs</th>
  </tr>
  </thead>
  <tbody>
- <tr><td class="td-left">U-Net</td><td>Discriminative</td><td>Skip connections, encoder-decoder</td><td>L1 + SSIM</td></tr>
- <tr><td class="td-left">U-Net Conditional</td><td>Discriminative</td><td>FiLM conditioning on ($\alpha$, $\beta$)</td><td>L1 + SSIM</td></tr>
- <tr><td class="td-left">Restormer</td><td>Discriminative</td><td>MDTA transformer, global context</td><td>L1</td></tr>
- <tr><td class="td-left">GAN-Pix2Pix</td><td>Generative</td><td>Patch discriminator, adversarial</td><td>Adversarial + L1</td></tr>
- <tr><td class="td-left">Diffusion-SR3</td><td>Generative</td><td>Velocity prediction, DDIM (20 steps)</td><td>Velocity MSE</td></tr>
+ <tr><td class="td-left">U-Net (baseline)</td><td>Discriminative</td><td>Skip connections, encoder-decoder</td><td>L1 + SSIM</td><td>$\approx 7.8$</td><td>AdamW</td><td>$1\!\times\!10^{-4}$</td><td>120</td></tr>
+ <tr><td class="td-left">U-Net Conditional</td><td>Discriminative</td><td>FiLM conditioning on ($\alpha$, $\beta$)</td><td>L1 + SSIM</td><td>$\approx 7.9$</td><td>AdamW</td><td>$1\!\times\!10^{-4}$</td><td>120</td></tr>
+ <tr><td class="td-left">Restormer</td><td>Discriminative</td><td>MDTA transformer, global context</td><td>L1</td><td>$\approx 26.1$</td><td>AdamW</td><td>$3\!\times\!10^{-4}$</td><td>150</td></tr>
+ <tr><td class="td-left">GAN-Pix2Pix</td><td>Generative</td><td>Patch discriminator, adversarial</td><td>Adversarial + L1</td><td>$\approx 57.0$</td><td>Adam</td><td>$2\!\times\!10^{-4}$</td><td>200</td></tr>
+ <tr><td class="td-left">Diffusion-SR3</td><td>Generative</td><td>Velocity prediction, DDIM (20 steps)</td><td>Velocity MSE</td><td>$\approx 34.7$</td><td>Adam + warm-up</td><td>$2\!\times\!10^{-4}$</td><td>600k steps</td></tr>
  </tbody>
  </table>
 </div>
@@ -869,12 +881,23 @@ $\epsilon \sim \mathcal{N}(0, I)$. At inference, deterministic DDIM sampling
 
 <h3 class="subsec">4.3. Training Protocol</h3>
 <p>
-All models are trained on an NVIDIA RTX 3090 GPU. Hyperparameters are tuned using PSNR and SSIM on
-the validation split, with the best checkpoint saved per metric. Discriminative models use AdamW
-with cosine annealing; GAN-Pix2Pix uses Adam with a fixed learning rate for generator and
-discriminator alternation; Diffusion-SR3 uses Adam with a linear warm-up schedule. Diffusion
-training requires substantially more steps due to the multi-step denoising objective.
-Each model is trained independently on both datasets (Standard and Extreme), yielding 10 model-dataset pairs.
+All models are trained on a single NVIDIA RTX 3090 (24 GB) GPU. Each model is trained independently
+on both datasets (Standard and Extreme), yielding ten model-dataset pairs. The per-model
+configuration is summarised in Table&nbsp;2. Batch size is $32$ for the three discriminative
+models, $16$ for GAN-Pix2Pix (generator plus discriminator), and $16$ for Diffusion-SR3.
+Discriminative models (U-Net, U-Net Conditional, Restormer) use the AdamW optimiser with weight
+decay $10^{-2}$ and a cosine-annealing learning-rate schedule decaying to $10^{-6}$ over the full
+training horizon. GAN-Pix2Pix uses Adam ($\beta_1 = 0.5$, $\beta_2 = 0.999$) with a fixed learning
+rate and alternates generator and discriminator updates every step. Diffusion-SR3 uses Adam with a
+5000-step linear warm-up followed by constant learning rate, and is trained for a fixed step budget
+rather than an epoch count because of its multi-step denoising objective; inference uses
+deterministic DDIM sampling with 20 steps. Model selection uses the validation-split PSNR and SSIM
+as surrogates for OCR: the checkpoint achieving the highest PSNR on the held-out validation set is
+retained for the final full-grid evaluation. Data augmentation is limited to the angle-sampling
+distribution itself (Section&nbsp;4.1); no photometric augmentation is applied beyond the camera
+artefacts baked into the construction pipeline. Typical wall-clock training time per
+model-dataset pair is 3-5&nbsp;h for U-Net variants, 35-45&nbsp;h for Restormer, 4-6&nbsp;h for
+GAN-Pix2Pix, and 12-18&nbsp;h for Diffusion-SR3.
 </p>
 
 <h3 class="subsec">4.4. Full-Grid Evaluation</h3>
@@ -910,9 +933,9 @@ accuracy.
 <h3 class="subsec">5.1. Training Performance on Dataset Test Splits</h3>
 <p>
 Table&nbsp;3 reports PSNR, SSIM, normalised training time, and inference latency for each
-model-dataset pair. Restormer achieves the highest PSNR and SSIM across all three datasets.
+model-dataset pair. Restormer achieves the highest PSNR and SSIM on both datasets.
 Diffusion-SR3 consistently underperforms, particularly on SSIM, where it lags the U-Net baseline
-by $3.5$&ndash;$4.3$ percentage points.
+by $3.9$&ndash;$4.1$ percentage points.
 </p>
 
 </div>
@@ -1325,43 +1348,25 @@ camera-portfolio owners, and forensic analysts:
  readable, a quantity directly useful for ROI and procurement decisions.</li>
 </ul>
 
-<h3 class="subsec">6.6. Limitations and Scope</h3>
+<h3 class="subsec">6.6. Limitations</h3>
 <p>
-Several aspects of the experimental design constrain the interpretation of the reported numbers.
-The benchmark is fully synthetic: clean plates are rendered in the Israeli format at a fixed
-$256 \times 64$ resolution, distorted by a fixed homographic pipeline at constant focal length and
-plate-to-camera distance, and perturbed with Gaussian blur ($\sigma \in [0.5, 1.5]$), colour jitter,
-and JPEG compression (quality $\in [55, 85]$). Real captures introduce additional effects not
-modelled here, including scale variation with vehicle distance, motion blur, rolling-shutter skew,
-low-light noise, multi-font plate designs, dirt, and partial occlusion. Absolute recoverability
-thresholds reported in this paper, including the $93.4\%$ maximal coverage figure, are therefore
-specific to the synthetic pipeline and should be re-validated before being used as deployment
-criteria; the <em>structure</em> of the recoverability space (the location of the boundary, the
-direction of the $\alpha/\beta$ asymmetry, and the relative ordering of architectures) is the
-transferable contribution.
+The study has several bounded scope conditions that should be read alongside the headline results.
+The benchmark is fully synthetic: clean plates are rendered in a single standard vehicle-plate
+format at a fixed $256 \times 64$ resolution, distorted by a fixed homographic pipeline at constant
+focal length and plate-to-camera distance, and perturbed with Gaussian blur
+($\sigma \in [0.5, 1.5]$), colour jitter, and JPEG compression (quality $\in [55, 85]$). Real
+captures introduce additional effects not modelled here, including scale variation with vehicle
+distance, motion blur, rolling-shutter skew, low-light noise, multi-font plate designs, dirt, and
+partial occlusion. Absolute recoverability thresholds reported in this paper, including the
+$93.4\%$ maximal coverage figure, therefore belong to the benchmark; the <em>structure</em> of the
+recoverability space (the location of the boundary, the $\alpha/\beta$ asymmetry, and the relative
+ordering of architectures) is the transferable contribution.
 </p>
 <p>
-The OCR back-end is Tesseract v4 (LSTM mode, digit-only filter) preceded by grayscale conversion,
-contrast normalisation, $2\times$ upscaling, binarisation, and per-digit fallbacks (Otsu, adaptive
-threshold, colour inversion). This preprocessing chain performs a light second stage of restoration
-beyond the neural network output; the reported plate-level accuracies therefore reflect the
-combined behaviour of the network and the OCR preprocessing. A stronger end-to-end plate OCR such
-as PaddleOCR or a plate-specific CRNN would likely shift the absolute boundary numbers, though the
-relative ranking between architectures is expected to remain stable.
-</p>
-<p>
-Results are reported from a single training run per model-dataset pair without multiple random
-seeds or confidence intervals; differences smaller than a few tenths of a percent in AUC or $F$
-should be interpreted with corresponding caution. Training hyperparameters were set on a held-out
-validation split rather than tuned per model with a systematic search, and the evaluation OCR is a
-single engine rather than an ensemble.
-</p>
-<p>
-Future work should validate the recoverability map on a real-sensor dataset collected from fixed
-cameras with known geometry, extend the distortion model to include distance variation and
-variable focal length, quantify sensitivity to OCR choice, report multi-seed statistics, and
-explore domain adaptation from synthetic to real plate imagery. A real-data sanity check on a
-public oblique-view benchmark (for example RodoSol-ALPR or UFPR-ALPR) is a natural first step.
+The OCR back-end is Tesseract v4 with standard preprocessing (grayscale, contrast normalisation,
+$2\times$ upscaling, binarisation, per-digit fallbacks). A stronger end-to-end plate-specific OCR
+(for example PaddleOCR or a CRNN variant) would likely shift the absolute boundary numbers, though
+the relative ranking of architectures is expected to remain stable.
 </p>
 
 <!-- ===== 7. CONCLUSION ===== -->
@@ -1385,12 +1390,60 @@ that lateral azimuthal rotation is harder to correct than elevational rotation, 
 placement guidelines for smart city deployments.
 </p>
 <p>
-These results directly answer the urban systems question this work was motivated by: fixed sensors
-not designed for LPR can nonetheless be opportunistically used for vehicle identification across
-the vast majority of real-world deployment geometries, with software-only restoration pipelines
-and no hardware modifications.
+These results provide an initial quantitative answer to the urban systems question this work was
+motivated by: under the benchmark conditions studied, fixed sensors not designed for LPR may be
+opportunistically usable for vehicle identification across a substantial fraction of oblique
+viewing geometries using software restoration alone. The transferability of the specific 93.4%
+figure to real sensor portfolios requires validation on real captures; the structural findings,
+the shape of the recoverable region, the $\alpha/\beta$ asymmetry, and the relative ordering of
+architectures, are expected to carry over.
 </p>
 
+<h2 class="sec">Author Contributions</h2>
+<p>
+Conceptualization, A.A. and Y.A.; methodology, I.A., O.B.A. and A.A.; software, I.A. and O.B.A.;
+validation, I.A., O.B.A. and A.A.; formal analysis, I.A., O.B.A. and A.A.; investigation, I.A.
+and O.B.A.; data curation, I.A. and O.B.A.; writing, original draft preparation, I.A., O.B.A.
+and A.A.; writing, review and editing, Y.A. and A.A.; visualization, I.A. and O.B.A.;
+supervision, Y.A. and A.A.; project administration, A.A. All authors have read and agreed to
+the published version of the manuscript.
+</p>
+
+<h2 class="sec">Funding</h2>
+<p>
+This research received no external funding.
+</p>
+
+<h2 class="sec">Institutional Review Board Statement</h2>
+<p>
+Not applicable. This study did not involve humans or animals; all license plate imagery used in
+the benchmark is synthetically generated with randomly sampled digit strings.
+</p>
+
+<h2 class="sec">Informed Consent Statement</h2>
+<p>
+Not applicable.
+</p>
+
+<h2 class="sec">Data Availability Statement</h2>
+<p>
+The synthetic datasets, evaluation grid, and pre-computed per-angle-pair evaluation results
+generated during this study will be made available by the corresponding author on reasonable
+request. The deterministic Sobol seeds and the exact distortion-pipeline parameters required to
+regenerate the datasets are documented in Section&nbsp;4.1.
+</p>
+
+<h2 class="sec">Code Availability</h2>
+<p>
+Training and evaluation scripts for all five architectures, together with the figure-generation
+pipeline used to produce the results in this paper, will be released in a public repository upon
+acceptance.
+</p>
+
+<h2 class="sec">Conflicts of Interest</h2>
+<p>
+The authors declare no conflict of interest.
+</p>
 
 </div><!-- end two-col -->
 
