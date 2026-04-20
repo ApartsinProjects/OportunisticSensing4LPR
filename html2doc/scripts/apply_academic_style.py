@@ -497,10 +497,14 @@ def _merge_equation_numbers(doc, right_tab_twips=9360):
     """Pandoc renders display equations as <m:oMathPara> paragraphs and the
     equation number as a separate <w:p> with just '(N)' on the following
     line. This joins them back: the <m:oMathPara> is unwrapped to inline
-    <m:oMath>, a right-aligned tab stop is added, and the number is appended
-    as a trailing run in the same paragraph. The orphan number paragraph is
+    <m:oMath>, and the paragraph is given two tab stops (one center at the
+    page-width midpoint, one right at the right margin). A leading tab
+    places the math at the center tab, a trailing tab + number places the
+    number flush right. Net effect: equation stays centered, number appears
+    right-justified on the same line. The orphan number paragraph is then
     deleted.
     """
+    center_tab_twips = right_tab_twips // 2
     body = doc.element.body
     children = list(body.iterchildren())
     merged = 0
@@ -532,38 +536,54 @@ def _merge_equation_numbers(doc, right_tab_twips=9360):
             continue
         math_index = list(p).index(math_para)
         p.remove(math_para)
-        p.insert(math_index, omath)
 
-        # Add a right-aligned tab stop to the paragraph's pPr
+        # Configure pPr: paragraph alignment left (so tabs govern), two
+        # tab stops: center at midpoint, right at page-end.
         pPr = p.find(f"{{{W_NS}}}pPr")
         if pPr is None:
             pPr = OxmlElement("w:pPr")
             p.insert(0, pPr)
+            math_index += 1  # inserted pPr shifts the math index
         tabs_el = pPr.find(f"{{{W_NS}}}tabs")
         if tabs_el is not None:
             pPr.remove(tabs_el)
         tabs_el = OxmlElement("w:tabs")
-        tab_el = OxmlElement("w:tab")
-        tab_el.set(qn("w:val"), "right")
-        tab_el.set(qn("w:pos"), str(right_tab_twips))
-        tabs_el.append(tab_el)
+        center_tab = OxmlElement("w:tab")
+        center_tab.set(qn("w:val"), "center")
+        center_tab.set(qn("w:pos"), str(center_tab_twips))
+        tabs_el.append(center_tab)
+        right_tab = OxmlElement("w:tab")
+        right_tab.set(qn("w:val"), "right")
+        right_tab.set(qn("w:pos"), str(right_tab_twips))
+        tabs_el.append(right_tab)
         pPr.append(tabs_el)
-        # Ensure left alignment of the paragraph so the tab stop governs
         jc = pPr.find(f"{{{W_NS}}}jc")
         if jc is None:
             jc = OxmlElement("w:jc")
             pPr.append(jc)
         jc.set(qn("w:val"), "left")
+        # Remove any pre-existing indent that could fight the tab stops
+        ind = pPr.find(f"{{{W_NS}}}ind")
+        if ind is not None:
+            pPr.remove(ind)
 
-        # Append tab + number run at end of the paragraph
-        r = OxmlElement("w:r")
-        tab_run = OxmlElement("w:tab")
-        r.append(tab_run)
+        # Build a leading run containing only a tab (pushes math to center tab)
+        leading = OxmlElement("w:r")
+        leading_tab = OxmlElement("w:tab")
+        leading.append(leading_tab)
+        p.insert(math_index, leading)
+        # Insert the inline math after the leading tab
+        p.insert(math_index + 1, omath)
+
+        # Append trailing tab + number run (number flush right at right tab)
+        trailing = OxmlElement("w:r")
+        trailing_tab = OxmlElement("w:tab")
+        trailing.append(trailing_tab)
         t_el = OxmlElement("w:t")
         t_el.text = number_text
         t_el.set(qn("xml:space"), "preserve")
-        r.append(t_el)
-        p.append(r)
+        trailing.append(t_el)
+        p.append(trailing)
 
         # Remove the orphan number paragraph
         body.remove(nxt)
